@@ -12,7 +12,7 @@
 
 ```bash
 # 基本用法
-python3 scripts/generate_mermaid_images.py .edan-dev/feature/<name>/review/solution.md --replace
+python3 scripts/generate_mermaid_images.py EdanSpec/feature/<name>/review/solution.md --replace
 
 # 常用参数
 --output-dir, -o   输出目录（默认: mermaid-images）
@@ -28,7 +28,7 @@ python3 scripts/generate_mermaid_images.py .edan-dev/feature/<name>/review/solut
 ```bash
 bash scripts/generate_mermaid_images.sh <输入文件> <输出目录> <格式>
 # 例如：
-bash scripts/generate_mermaid_images.sh .edan-dev/feature/login-review/review/solution.md mermaid-images png
+bash scripts/generate_mermaid_images.sh EdanSpec/feature/login-review/review/solution.md mermaid-images png
 ```
 
 ### 在线工具（免安装）
@@ -58,10 +58,10 @@ bash scripts/generate_mermaid_images.sh .edan-dev/feature/login-review/review/so
 
 ```bash
 # 1. 替换 mermaid 代码块为图片链接
-python3 scripts/generate_mermaid_images.py .edan-dev/feature/<name>/review/solution.md --replace
+python3 scripts/generate_mermaid_images.py EdanSpec/feature/<name>/review/solution.md --replace
 
 # 2. pandoc 转 Word
-pandoc .edan-dev/feature/<name>/review/solution-images.md -o .edan-dev/feature/<name>/review/solution.docx
+pandoc EdanSpec/feature/<name>/review/solution-images.md -o EdanSpec/feature/<name>/review/solution.docx
 ```
 
 > 如果 pandoc 未安装，可使用备选方案 `scripts/generate_docx.py`，详见 design-review SKILL.md 阶段三。

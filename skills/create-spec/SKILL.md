@@ -1,5 +1,5 @@
 ---
-name: create-spec
+name: edanspec:create-spec
 description: 创建/恢复/变更 feature 的方案文档。触发场景：准备启动新需求、继续上次工作、需求变更需要更新方案。不适用于一行修复、拼写错误或纯调研分析。
 ---
 
@@ -14,7 +14,7 @@ description: 创建/恢复/变更 feature 的方案文档。触发场景：准�
 ### 第一步：检测活跃 feature
 
 ```bash
-find .edan-dev/feature/ -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort
+find EdanSpec/feature/ -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort
 ```
 
 ### 第二步：匹配场景
@@ -31,7 +31,7 @@ find .edan-dev/feature/ -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort
 ## 目录结构
 
 ```
-.edan-dev/feature/{timestamp}-{topic}/
+EdanSpec/feature/{timestamp}-{topic}/
 ├── proposal.md            # 为什么做、影响范围
 ├── specs/                 # 需求规格
 │   └── {capability}-spec.md
@@ -85,7 +85,6 @@ pending → ready → done
 
 - `pending`：初始状态，或依赖未满足
 - `ready`：dependsOn 中所有 artifact 的 status 为 done，且本地文件不存在或内容为空
-- `draft`：文件存在但内容不完整或需要用户确认，依赖已满足
 - `done`：文件存在且内容非空，用户已确认
 - 每次读写文件后**必须重新计算**所有 artifact 的 status，不要缓存
 
@@ -141,7 +140,7 @@ pending → ready → done
 | **新增能力** | 在对应 spec 中追加 `[ADDED]` 需求；在 design.md 中追加相关决策项；在 proposal.md 的 What Changes 中追加要点 |
 | **修改需求** | 在对应 spec 中将原需求标记改为 `[MODIFIED]`；更新 design.md 中相关决策项；如果 proposal 的范围描述变了，同步更新 |
 | **删除需求** | 在对应 spec 中将原需求标记改为 `[REMOVED]`；在 design.md 中标记相关决策项为"已废弃"；更新 proposal.md |
-| **技术方案变更** | 直接更新 design.md 的对应决策项，追加"变更记录"段落（说明原因、时间）；检查 spec 是否因此需要调整 |
+| **技术方案变更** | 直接更新 design.md 的对应决策项，追加"变更记录"段落（说明原因、时间）；检查 spec 是否因此需要调整；若涉及架构层面且 designReviewState 为 "none"，将其更新为 "recommended" |
 | **范围缩小** | 更新 proposal.md 的 Scope（移到 Out of scope）；不删除已生成的 spec/design，保留历史上下文 |
 
 ### 变更示例
@@ -215,9 +214,9 @@ AskUserQuestion:
 ```bash
 TIMESTAMP=$(date +%Y%m%d%H%M%S)
 NAME="${TIMESTAMP}-${topic}"
-mkdir -p ".edan-dev/feature/${NAME}/specs"
-mkdir -p ".edan-dev/specs"
-mkdir -p ".edan-dev/archive"
+mkdir -p "EdanSpec/feature/${NAME}/specs"
+mkdir -p "EdanSpec/specs"
+mkdir -p "EdanSpec/archive"
 ```
 
 初始化 `status.json`：
@@ -234,11 +233,11 @@ mkdir -p ".edan-dev/archive"
     { "id": "design", "file": "design.md", "status": "pending", "dependsOn": ["proposal"], "lastModified": null }
   ],
   "conflicts": [],
-  "review_skipped": false,
+  "designReviewState": "none",
   "reviewGate": {
-    "codeReview": { "status": "pending", "lastRun": null, "hasCritical": false },
-    "securityReview": { "status": "pending", "lastRun": null, "hasCritical": false },
-    "verify": { "status": "pending", "lastRun": null, "hasCritical": false }
+    "codeReview": { "status": "pending", "lastRun": null, "hasCritical": false, "findings": { "critical": 0, "important": 0, "suggestion": 0 } },
+    "securityReview": { "status": "pending", "lastRun": null, "hasCritical": false, "findings": { "critical": 0, "important": 0, "suggestion": 0 } },
+    "verify": { "status": "pending", "lastRun": null, "hasCritical": false, "findings": { "critical": 0, "important": 0, "suggestion": 0 } }
   },
   "taskGraph": []
 }
@@ -250,7 +249,7 @@ mkdir -p ".edan-dev/archive"
 |---|---|---|
 | `active` | feature 进行中 | create-spec 初始化 |
 | `completed` | 全部任务 + 审查关卡通过，待归档 | task-implement 步骤六完成后 |
-| `archived` | 已移入 `.edan-dev/archive/` | archive 移动文件后 |
+| `archived` | 已移入 `EdanSpec/archive/` | archive 移动文件后 |
 | `abandoned` | 用户主动放弃 | 用户明确说放弃时 |
 
 ```
@@ -327,18 +326,13 @@ active ──(全部任务+审查完成)──→ completed ──(归档)──
 
 ### Delta Spec 标记规则
 
-| 标记 | 何时使用 |
-|------|---------|
-| `[ADDED]` | 新增需求（默认） |
-| `[MODIFIED]` | 修改主 spec 中已有的需求 |
-| `[REMOVED]` | 删除主 spec 中的需求 |
-| `[RENAMED] 原名: X` | 重命名主 spec 中的需求 |
+详见 `skills/references/delta-spec-rules.md`。
 
 #### 4.3 生成 design.md
 
 先读取 `references/design-guide.md`，再生成技术设计。
 
-已有项目时沿用现有技术栈，不要自作主张换框架。新项目参考 `references/platform-*.md` 逐项确认技术选型。
+已有项目时沿用现有技术栈，不得自行更换框架。新项目参考 `references/platform-*.md` 逐项确认技术选型。
 
 ### 5. 逐章确认
 
@@ -362,12 +356,18 @@ active ──(全部任务+审查完成)──→ completed ──(归档)──
 - 涉及数据库 schema 变更或新表
 - 性能指标有严格要求
 
-引导话术后，用户选择继续则执行 design-review；跳过则记录 `review_skipped: true`。
+引导话术：
+> "检测到架构层面变更，建议执行 `edanspec:design-review` 出详细方案后再拆分任务。也可以先跳过，直接拆分任务。要继续吗？"
+
+- 用户选择继续 → 更新 `designReviewState: "recommended"`，引导调用 `edanspec:design-review`
+- 用户选择跳过 → 更新 `designReviewState: "skipped"`，进入步骤 7
+
+**无需 design-review 时**（不满足任何信号）：`designReviewState` 保持 `"none"`，直接进入步骤 7。
 
 ### 7. 引导下一步
 
 1. 报告产物清单
-2. 提示：**"方案阶段完毕。要开始拆分任务吗？使用 `edan-dev:task-plan` 技能。"**
+2. 提示：**"方案阶段完毕。要开始拆分任务吗？使用 `edanspec:task-plan` 技能。"**
 3. 用户同意则引导调用 task-plan
 
 ## 辅助资源（按需加载，不要一次全读）
@@ -375,9 +375,9 @@ active ──(全部任务+审查完成)──→ completed ──(归档)──
 - `references/design-guide.md` — 设计概要规范，生成 design.md 时读
 - `references/platform-{android,flutter,web,frontend,embedded}.md` — 按项目类型读一个
 
-## 常见借口
+## 常见误区与反驳
 
-> 通用借口见 `AGENT.md`。
+> 通用误区见 `AGENT.md`。
 
 | 说辞 | 真相 |
 |------|------|
@@ -389,7 +389,7 @@ active ──(全部任务+审查完成)──→ completed ──(归档)──
 
 - 用户描述都没读完就开始生成
 - spec 里出现"应该""大概"等模糊词
-- design 自作主张换了项目已有的技术栈
+- design 自行更换了项目已有的技术栈
 - 核心文档一次性全部生成
 - 未检测冲突就生成 spec
 - 生成后未更新 status.json

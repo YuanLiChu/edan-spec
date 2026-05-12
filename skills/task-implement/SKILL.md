@@ -1,5 +1,5 @@
 ---
-name: task-implement
+name: edanspec:task-implement
 description: 依据任务文档执行代码实现。增量式开发 + 测试驱动（TDD），每个增量独立验证后原子提交。触发场景：用户要求开始实现功能或修复 bug、按任务计划执行、继续上次工作。不适用于纯配置变更、文档更新、简单重命名。
 ---
 
@@ -18,7 +18,7 @@ description: 依据任务文档执行代码实现。增量式开发 + 测试驱�
   ↓
 提交 + 更新（原子提交 → checkbox → status.json taskGraph）
   ↓
-审查关卡（code-review → security-review → verify，全部必须通过）
+审查关卡（code-review、security-review、verify，全部必须通过）
 ```
 
 ## 状态模型
@@ -72,10 +72,10 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 
 有活跃 feature 时自动执行，从状态驱动恢复，不依赖会话记忆。
 
-**检测流程**：`.edan-dev/feature/` 下有活跃工单 → 读 `status.json` + `tasks.md` → 从 taskGraph 中第一个 `status != "done"` 的任务恢复；无活跃工单 → 继续步骤二。
+**检测流程**：`EdanSpec/feature/` 下有活跃工单 → 读 `status.json` + `tasks.md` → 从 taskGraph 中第一个 `status != "done"` 的任务恢复；无活跃工单 → 继续步骤二。
 
 **恢复操作**：
-1. `find .edan-dev/feature/ -maxdepth 1 -mindepth 1 -type d | sort` 定位工单
+1. `find EdanSpec/feature/ -maxdepth 1 -mindepth 1 -type d | sort` 定位工单
 2. 读 `status.json`，**重新计算每个任务的 status**（基于 tasks.md checkbox + 依赖关系）
 3. 从 taskGraph 中找出第一个 `status != "done"` 的任务 → 断点
 4. 如果全部 done → 检查 reviewGate，见步骤六
@@ -85,12 +85,14 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 
 | 场景 | 操作 |
 |------|------|
-| taskGraph 全部 done，reviewGate 全部 done | 引导进入 archive |
-| taskGraph 全部 done，reviewGate 未完成 | 从 reviewGate 第一个 pending 关卡继续（步骤六） |
+| taskGraph 全部 done，reviewGate 全部 passed | 引导进入 archive |
+| taskGraph 全部 done，reviewGate 有 pending/failed | 从 reviewGate 第一个 pending 关卡继续（步骤六） |
 | 部分任务 in_progress | 从该任务的 currentIncrement 继续 |
 | 有 ready 但未开始 | 从第一个 ready 任务开始 |
 | taskGraph 为空/缺失 | 从 tasks.md 重新生成 taskGraph |
-| 测试失败 | 调 `edan-dev:debugging` 排障 |
+| 测试失败 | 调 `edanspec:debugging` 排障 |
+
+> **reviewGate 缺失处理**：如果 `status.json` 中不存在 `reviewGate` 字段（例如跳过了 create-spec 直接调用 task-implement），在步骤六开始前先初始化 reviewGate 为全 pending 状态，参见 create-spec/SKILL.md 中的初始化格式。
 
 **从 tasks.md 重新生成 taskGraph 的规则：**
 1. 解析 tasks.md 中所有任务的 ID、标题、依赖关系、涉及文件
@@ -104,7 +106,7 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 
 ## 步骤二：加载
 
-读取 `.edan-dev/feature/<name>/tasks.md`，记录验收标准、涉及文件、检查点位置。
+读取 `EdanSpec/feature/<name>/tasks.md`，记录验收标准、涉及文件、检查点位置。
 
 ### 依赖检查
 
@@ -118,10 +120,11 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 ### 并行判定
 
 **并行组解析**：从 tasks.md 中解析并行关系：
-1. 扫描所有任务的「依赖关系」字段，查找"并行"相关描述
-2. 两个任务可并行当且仅当：
-   - 依赖关系中明确写了"并行：可与 Task-XXX 并行"，或
-   - 两者的"涉及的文件"列表无交集，且前置依赖均已完成
+1. 扫描 `<!-- PARALLEL: Task-XXX, Task-YYY -->` 注释，提取并行组
+2. 验证并行条件：两个任务可并行当且仅当：
+   - 并行组注释中明确列出，且
+   - 两者的"涉及的文件"列表无交集，且
+   - 前置依赖任务均已完成（checkbox 全 `[x]`）
 3. 确定并行组后，向用户报告并确认
 
 **并行执行前置条件**（必须全部满足）：
@@ -198,7 +201,7 @@ RED（失败测试）→ GREEN（最小实现）→ REFACTOR（重构）→ 验�
 4. 类型检查通过
 5. 覆盖率达标（见下方覆盖率检查）
 
-**测试失败** → 调 `edan-dev:debugging` 五步排障，不盲目改代码。
+**测试失败** → 调 `edanspec:debugging` 五步排障，不盲目改代码。
 
 ### 覆盖率检查（强制执行）
 
@@ -214,7 +217,7 @@ RED（失败测试）→ GREEN（最小实现）→ REFACTOR（重构）→ 验�
 | 手动验证（模拟器操作、UI 视觉检查、完整流程走查） | 向用户逐项列出验证项，等待用户确认后打勾 | 自动化验证通过后、提交前 |
 
 **规则**：
-- 自动化验证不通过 → 调 `edan-dev:debugging` 排障，不得跳过
+- 自动化验证不通过 → 调 `edanspec:debugging` 排障，不得跳过
 - 手动验证项必须逐项列出，等待用户确认后才能打勾继续
 - 用户明确说"我自己验证"时，保留 `[ ]` 不做变更
 - 禁止将手动验证项直接标记为 `[x]`
@@ -272,23 +275,20 @@ Co-Authored-By: Claude
 
 ## 步骤六：完成后审查关卡
 
-全部任务完成后，**必须依次执行三个审查关卡**，全部通过后才算实现完成。
+全部任务完成后，**必须通过三个审查关卡**，全部通过后才算实现完成。
 
 ```
 tasks.md 全部 done
   ↓
-1. code-review（代码审查）
-  ├─ 有 CRITICAL → 返回修复，重新审查
-  └─ 通过 → 继续
+基于 reviewGate 状态选择下一个 pending 关卡执行
+  ├─ code-review（代码审查，四维度）
+  ├─ security-review（安全审查，五维度）
+  └─ verify（三维度验证）
   ↓
-2. security-review（安全审查）
-  ├─ 有 CRITICAL → 返回修复，重新审查
-  └─ 通过 → 继续
-  ↓
-3. verify（三维度验证）
-  ├─ 有 CRITICAL → 返回修复，重新验证
-  └─ 通过 → 实现完成，引导归档
+全部 status = "passed" 且 hasCritical 全 false → 实现完成，引导归档
 ```
+
+三个关卡**推荐按 code-review → security-review → verify 顺序执行**，恢复时从任意 pending 关卡继续，已通过的直接跳过。
 
 ### 6.1 恢复断点
 
@@ -296,45 +296,47 @@ tasks.md 全部 done
 
 ```json
 "reviewGate": {
-  "codeReview":     { "status": "done", "lastRun": "...", "hasCritical": false },
-  "securityReview": { "status": "pending", "lastRun": null, "hasCritical": false },
-  "verify":         { "status": "pending", "lastRun": null, "hasCritical": false }
+  "codeReview":     { "status": "passed", "lastRun": "...", "hasCritical": false, "findings": { "critical": 0, "important": 2, "suggestion": 5 } },
+  "securityReview": { "status": "pending", "lastRun": null, "hasCritical": false, "findings": { "critical": 0, "important": 0, "suggestion": 0 } },
+  "verify":         { "status": "pending", "lastRun": null, "hasCritical": false, "findings": { "critical": 0, "important": 0, "suggestion": 0 } }
 }
 ```
 
 | reviewGate 状态 | 操作 |
 |----------------|------|
-| 全部 done | 引导进入 archive |
-| codeReview=done, securityReview=pending | 直接执行 security-review |
-| codeReview=pending | 从头开始 code-review |
+| 全部 passed 且 hasCritical 全 false | 引导进入 archive |
 | 任一 hasCritical=true | 拒绝进入下一阶段，引导修复对应任务 |
+| 有 pending 关卡 | 执行第一个 pending 关卡（按 code-review → security-review → verify 顺序） |
+| 有 passed 关卡 | **直接跳过**，不重复执行。即使 code-review 中已引导过 security-review，仍以 reviewGate 状态为准 |
+
+> **关于重复审查**：code-review 可能识别到安全问题并引导用户单独执行 `edanspec:security-review`。此时 reviewGate.securityReview 可能已是 `passed`。步骤六不再重复执行，直接跳过已通过的关卡。
 
 ### 6.2 执行 code-review
 
-调用 `edan-dev:code-review` 对当前 feature 的代码变更进行四维度审查。
+调用 `edanspec:code-review` 对当前 feature 的代码变更进行四维度审查。
 
 - **有 CRITICAL** → 展示报告，返回对应任务修复，修复后重新执行 code-review
-- **无 CRITICAL** → 更新 `reviewGate.codeReview.status = "done"`、`lastRun` 记录时间、`hasCritical = false`，继续下一阶段
+- **无 CRITICAL** → 更新 `reviewGate.codeReview.status = "passed"`、`lastRun` 记录时间、`hasCritical = false`、`findings` 记录各严重度数量，继续下一阶段
 
 ### 6.3 执行 security-review
 
-调用 `edan-dev:security-review` 对当前 feature 的代码变更进行五维度安全审查。
+调用 `edanspec:security-review` 对当前 feature 的代码变更进行五维度安全审查。
 
 - **有 CRITICAL** → 展示报告，返回对应任务修复，修复后重新执行 security-review
-- **无 CRITICAL** → 更新 `reviewGate.securityReview.status = "done"`、`lastRun` 记录时间、`hasCritical = false`，继续下一阶段
+- **无 CRITICAL** → 更新 `reviewGate.securityReview.status = "passed"`、`lastRun` 记录时间、`hasCritical = false`、`findings` 记录各严重度数量，继续下一阶段
 
 ### 6.4 执行 verify
 
-调用 `edan-dev:verify` 对当前 feature 执行三维度验证。
+调用 `edanspec:verify` 对当前 feature 执行三维度验证。
 
 - **有 CRITICAL** → 展示报告，返回对应任务修复，修复后重新执行 verify
-- **无 CRITICAL** → 更新 `reviewGate.verify.status = "done"`、`lastRun` 记录时间、`hasCritical = false`，实现完成
+- **无 CRITICAL** → 更新 `reviewGate.verify.status = "passed"`、`lastRun` 记录时间、`hasCritical = false`、`findings` 记录各严重度数量，实现完成
 
 ### 6.5 审查完成判定
 
-三个关卡全部 `status = "done"` 且 `hasCritical = false` → 更新 `status.json`：`state = "completed"`，然后引导用户归档：
+三个关卡全部 `status = "passed"` 且 `hasCritical = false` → 更新 `status.json`：`state = "completed"`，然后引导用户归档：
 
-> "实现完成，全部审查通过。要现在归档这个 feature 吗？（`edan-dev:archive`）"
+> "实现完成，全部审查通过。要现在归档这个 feature 吗？（`edanspec:archive`）"
 
 **任一关卡未执行或未通过 → 不算实现完成。** 恢复时从 reviewGate 的 pending 关卡继续。
 
@@ -354,13 +356,13 @@ tasks.md 全部 done
 | 7 — 并行有界 | 仅无文件重叠且无依赖时并行，合并后统一验证 |
 | 8 — 及时更新 | 任务完成后立即更新 checkbox 和 status.json |
 | 9 — 覆盖率必检 | 每个任务完成后必须运行覆盖率工具检测并记录数值，不得推算 |
-| 10 — 审查必过 | 全部任务完成后必须通过 code-review → security-review → verify，缺一不算完成 |
+| 10 — 审查必过 | 全部任务完成后必须通过 code-review、security-review、verify，缺一不算完成 |
 
 ---
 
-## 常见借口
+## 常见误区与反驳
 
-> 通用借口见 `AGENT.md`。
+> 通用误区见 `AGENT.md`。
 
 | 说辞 | 真相 |
 |------|------|
@@ -380,7 +382,7 @@ tasks.md 全部 done
 - taskGraph 与 tasks.md checkbox 不一致时不重新计算
 - 并行条件不满足时强行并行（项目骨架未完成、文件有交集）
 - 覆盖率报告未记录实际数值就提交
-- **跳过审查关卡直接归档**（三个关卡必须全部通过）
+- **跳过审查关卡直接归档**（三个关卡必须全部通过，但以 reviewGate 状态为准，已通过的不重复执行）
 - reviewGate 显示有 CRITICAL 时未修复就进入下一阶段
 
 ## 验证与引导
@@ -389,7 +391,7 @@ tasks.md 全部 done
 
 **全部任务完成**：全量测试通过、构建产物干净、工作区无未提交变更、三个审查关卡全部通过。
 
-**修复上限提醒**（详见 `edan-dev:debugging`）：同一问题修复超过 3 次未成功应停下来重新定位根因；超过 4 次应调 `edan-dev:explore` 重新审视设计方案。
+**修复上限提醒**（详见 `edanspec:debugging`）：修复次数从尝试次数计数——同一问题修复超过 2 次未成功应停下来重新定位根因（第 3 次，调 `edanspec:debugging`）；超过 3 次应调 `edanspec:explore` 重新审视设计方案（第 4 次）；第 5 次停止并报告问题。
 
 ## 辅助资源（按需加载）
 

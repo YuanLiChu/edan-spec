@@ -1,12 +1,12 @@
 ---
 
-name: code-review
+name: edanspec:code-review
 description: 合并前四维度审查（正确性、可读性、架构、性能）。触发场景：代码实现完成后、合并前、用户要求「审查代码」「代码审查」「看看这段代码」「有没有问题」。不适用于纯文档修改或格式调整。
 ---
 
 # 代码审查
 
-合入前从四个维度评估代码质量。审查不是找茬——是在代码合入前发现真正的问题。涉及安全维度（认证/授权/用户输入/密钥管理）时，建议用户另行执行 `edan-dev:security-review`。
+合入前从四个维度评估代码质量。审查不是找茬——是在代码合入前发现真正的问题。涉及安全维度（认证/授权/用户输入/密钥管理）时，建议用户另行执行 `edanspec:security-review`。
 
 > **职责分工**：本 skill 负责流程编排（确定范围 → 启动审查 → 处理结果）。审查维度定义、检查项细则、输出格式以 `agents/code-reviewer.md` 为准。
 
@@ -52,16 +52,18 @@ description: 合并前四维度审查（正确性、可读性、架构、性能�
 
 如果在 feature 目录下（`status.json` 存在），审查完成后更新 `reviewGate`：
 ```json
-{ "reviewGate": { "codeReview": { "status": "done" 或 "failed", "lastRun": "...", "hasCritical": true/false } } }
+{ "reviewGate": { "codeReview": { "status": "passed" 或 "failed", "lastRun": "...", "hasCritical": true/false, "findings": { "critical": N, "important": N, "suggestion": N } } } }
 ```
 - 有 CRITICAL → `status: "failed"`, `hasCritical: true`
-- 无 CRITICAL → `status: "done"`, `hasCritical: false`
+- 无 CRITICAL → `status: "passed"`, `hasCritical: false`
+
+**`findings` 记录各严重度问题的数量**，便于后续关卡和 archive 了解审查质量。
 
 如果不在 feature 目录下（无 `status.json`），只输出报告，不更新状态。
 
-## 常见借口
+## 常见误区与反驳
 
-> 通用借口见 `AGENT.md`。
+> 通用误区见 `AGENT.md`。
 
 | 说辞 | 真相 |
 |------|------|
@@ -81,7 +83,7 @@ description: 合并前四维度审查（正确性、可读性、架构、性能�
 - [ ] 每个发现都有文件位置和修复建议
 - [ ] 严重程度分级正确
 - [ ] 没有 CRITICAL 问题遗留
-- [ ] 涉及认证/授权/用户输入/密钥管理时，已引导执行 `edan-dev:security-review`
+- [ ] 涉及认证/授权/用户输入/密钥管理时，已引导执行 `edanspec:security-review`
 
 ## 辅助资源（按需加载）
 

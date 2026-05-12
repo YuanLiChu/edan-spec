@@ -1,5 +1,5 @@
 ---
-name: archive
+name: edanspec:archive
 description: 归档已完成的 feature——引导验证（可选）、delta spec 合并、移动到归档目录。触发场景：feature 完成准备归档、用户说「归档这个」「看看能归档哪些」「归档」。不适用于未完成或有 CRITICAL 问题的 feature。
 ---
 
@@ -11,8 +11,8 @@ description: 归档已完成的 feature——引导验证（可选）、delta sp
 
 ```
 确认目标 feature → 检查 status.json 审查状态
-                      ├─ 审查关卡未完成 → 引导回退到 edan-dev:task-implement 完成剩余关卡
-                      ├─ 验证状态 pending → 引导执行 edan-dev:verify，等待结果后回来
+                      ├─ 验证状态 pending → 引导执行 edanspec:verify，等待结果后回来
+                      ├─ 审查关卡未完成 → 引导回退到 edanspec:task-implement 完成剩余关卡
                       ├─ 审查全部通过 → delta spec 合并 → 冲突检测 → mv 到 archive
                       └─ 已验证但有 IMPORTANT → 展示报告，用户确认后继续 → delta spec 合并 → mv 到 archive
 ```
@@ -23,40 +23,40 @@ description: 归档已完成的 feature——引导验证（可选）、delta sp
 否则列出所有活跃 feature（`state: "active"`），让用户选择：
 
 ```bash
-find .edan-dev/feature/ -maxdepth 1 -mindepth 1 -type d | sort
+find EdanSpec/feature/ -maxdepth 1 -mindepth 1 -type d | sort
 ```
 
 对每个 feature 读 `status.json` 和 `tasks.md` 显示完成状态。
 
 ## 2. 检查审查与验证状态
 
-读取目标 feature 的 `status.json`，检查 `reviewGate` 字段。
+读取目标 feature 的 `status.json`，检查 `reviewGate` 字段。按以下顺序逐一检查（先验证，再审查）：
 
-### 2.1 审查关卡未完成（reviewGate 中有 pending 或 failed）
+### 2.1 验证未执行（reviewGate.verify.status = pending）
 
-> "`{feature}` 的审查关卡尚未全部完成。**请先调用 `edan-dev:task-implement` 完成剩余的审查关卡**，完成后再回来执行归档。"
-
-**停止后续步骤，等待用户回来。**
-
-### 2.2 验证未执行（reviewGate.verify.status = pending）
-
-> "`{feature}` 尚未执行验证。**请先调用 `edan-dev:verify` 跑一遍三维度验证**，完成后再回来执行归档。"
+> "`{feature}` 尚未执行验证。**请先调用 `edanspec:verify` 跑一遍三维度验证**，完成后再回来执行归档。"
 
 **停止后续步骤，等待用户回来。**
 
-### 2.3 审查全部通过（reviewGate 全部 done，verify.hasCritical = false）
+### 2.2 审查关卡未完成（reviewGate 中 codeReview 或 securityReview 为 pending 或 failed）
+
+> "`{feature}` 的审查关卡尚未全部完成。**请先调用 `edanspec:task-implement` 完成剩余的审查关卡**，完成后再回来执行归档。"
+
+**停止后续步骤，等待用户回来。**
+
+### 2.3 审查全部通过（reviewGate 全部 passed）
 
 展示审查和验证报告摘要，直接进入步骤 3（delta spec 合并）。
 
-### 2.4 已验证但有 IMPORTANT（verify.status = done，无 CRITICAL）
+### 2.4 已验证但有 IMPORTANT（verify.status = passed 且 verify.findings.important > 0）
 
-展示验证报告，告知用户存在 N 个 IMPORTANT 建议，确认是否继续归档。用户确认后进入步骤 3。
+展示验证报告，告知用户存在 `{verify.findings.important}` 个 IMPORTANT 建议，确认是否继续归档。用户确认后进入步骤 3。
 
-### 2.5 验证失败（reviewGate.verify.status = failed 或 hasCritical = true）
+### 2.5 验证失败（reviewGate.verify.status = failed 或 verify.findings.critical > 0）
 
 展示验证报告，拒绝归档：
 
-> "发现 N 个 CRITICAL 问题，解决前不能归档。请调用 `edan-dev:task-implement` 修复对应任务，修复后重新运行 verify。"
+> "发现 N 个 CRITICAL 问题，解决前不能归档。请调用 `edanspec:task-implement` 修复对应任务，修复后重新运行 verify。"
 
 **停止后续步骤。**
 
@@ -67,20 +67,24 @@ find .edan-dev/feature/ -maxdepth 1 -mindepth 1 -type d | sort
 每个 feature 中的 spec 是**增量变更**，不是完整规范的副本。
 
 ```
-.edan-dev/specs/                       feature 目录
-specs/auth-spec.md  ◄────  .edan-dev/feature/xxx/specs/auth-spec.md
-specs/api-spec.md   ◄────  .edan-dev/feature/xxx/specs/api-spec.md
-  (主 spec)                          (delta spec)
+EdanSpec/specs/                          EdanSpec/feature/xxx/specs/
+├── auth-spec.md      ◄──── delta spec ──├── auth-spec.md
+└── api-spec.md       ◄──── delta spec ──└── api-spec.md
+    (主 spec / 权威)                         (delta spec / 增量)
 ```
 
-**主 spec**：`.edan-dev/specs/` 下的权威需求规格，长期维护。
+**主 spec**：`EdanSpec/specs/` 下的权威需求规格，长期维护。
 **delta spec**：feature 中只包含本次变更**新增/修改/删除/重命名**的需求。
 
 ### 3.1 操作步骤
 
 ```
-对 feature 中每个 delta spec 执行：
-  ├─ 主 spec 不存在？→ 直接将 delta spec 复制为主 spec，完成
+确保主 spec 目录存在（create-spec 初始化时已创建，此处仅验证）：
+  [ -d EdanSpec/specs ] || mkdir -p EdanSpec/specs
+
+对 feature 中每个 delta spec（specs/{capability}-spec.md）执行：
+  ├─ 主 spec（EdanSpec/specs/{capability}-spec.md）不存在？
+  │   → 直接将 delta spec 复制到 EdanSpec/specs/ 下，完成
   └─ 主 spec 存在？
      ├─ 提取 delta 中每个需求的操作类型（见下方格式约定）
      ├─ ADDED    → 追加到主 spec 末尾
@@ -119,8 +123,8 @@ Delta spec 中每个需求块**必须在需求名后用标记注明操作类型*
 |------|------|---------|
 | `[ADDED]` | 新增需求 | 追加到主 spec 末尾 |
 | `[MODIFIED]` | 修改已有需求 | 按需求名匹配，替换整块 |
-| `[REMOVED]` | 删除需求 | 从主 spec 删除对应需求名整块 |
-| `[RENAMED] 原名: X` | 重命名 | 主 spec 中将原名改为新名，内容保留 |
+| `[REMOVED]` | 删除需求 | 从主 spec 删除对应需求整块 |
+| `[RENAMED] 原名: X` | 重命名 | 主 spec 中将原名改为新名，内容不变 |
 | 无标记 | 默认为 ADDED | 追加到主 spec 末尾 |
 
 需求块范围：从 `### Requirement:` 到下一个 `### Requirement:` 或文件末尾。
@@ -150,33 +154,33 @@ Delta spec 中每个需求块**必须在需求名后用标记注明操作类型*
 ## 4. 移动到归档目录
 
 ```bash
-mkdir -p .edan-dev/archive
-mv .edan-dev/feature/{name} .edan-dev/archive/
+mkdir -p EdanSpec/archive
+mv EdanSpec/feature/{name} EdanSpec/archive/
 ```
 
 移动后更新 `status.json`：`state = "archived"`。
 
 归档前最终确认：
-- [ ] reviewGate 三个关卡全部 done
+- [ ] reviewGate 三个关卡全部 passed
 - [ ] delta spec 已合并（或无 delta spec）
 - [ ] tasks.md 所有 checkbox 已勾选
 - [ ] 代码已提交
 
 ## 与 verify 的关系
 
-`edan-dev:verify` 只做三维度验证并输出报告，**不执行 delta spec 合并、不移动文件**。
+`edanspec:verify` 只做三维度验证并输出报告，**不执行 delta spec 合并、不移动文件**。
 本 skill 在用户选择先验证时调用 verify，验证通过后负责 delta spec 合并和文件移动。
 
-**verify 也可独立使用**——用户想"先看看做得怎么样再决定归档"时，直接调用 `edan-dev:verify`，不需要经过 archive。
+**verify 也可独立使用**——用户想"先看看做得怎么样再决定归档"时，直接调用 `edanspec:verify`，不需要经过 archive。
 
 | skill | 触发方式 | 职责 |
 |-------|---------|------|
-| **verify** | 独立调用，或由 archive 引导 | 三维度验证 → 输出报告 → 更新 status.json 中 verification 状态 |
+| **verify** | 独立调用，或由 archive 引导 | 三维度验证 → 输出报告 → 更新 status.json 中 reviewGate.verify 状态 |
 | **archive** | 用户主动调用 | 检查验证状态 → delta spec 合并 → 移动到 archive |
 
-## 常见借口
+## 常见误区与反驳
 
-> 通用借口见 `AGENT.md`。
+> 通用误区见 `AGENT.md`。
 
 | 说辞 | 真相 |
 |------|------|
@@ -186,17 +190,20 @@ mv .edan-dev/feature/{name} .edan-dev/archive/
 ## 警示信号
 
 - verification 为 pending 时未引导验证就直接执行归档
-- 自作主张执行验证而不是引导用户调用 verify
+- 主动执行验证而不是引导用户调用 verify
 - verification 为 failed 仍批准归档
 - delta spec 合并时覆盖了主 spec 的已有内容
 - 未检测冲突就移动文件
+- 合并 delta spec 前未确保 `EdanSpec/specs/` 目录存在
 
 ## 验证
 
 - [ ] 目标 feature 已确认
-- [ ] 验证状态已检查：reviewGate.verify.status 为 done
-- [ ] 若 reviewGate 有 pending：已引导用户执行 edan-dev:task-implement
+- [ ] 验证状态已检查：reviewGate.verify.status 为 passed
+- [ ] 若 reviewGate 有 pending：已引导用户执行 edanspec:task-implement
 - [ ] 若 reviewGate.verify 为 failed：已拒绝归档
+- [ ] findings 中的 IMPORTANT 已告知用户并确认
 - [ ] delta spec 已合并（或确认无 delta spec）
+- [ ] `EdanSpec/specs/` 目录存在且 delta 已正确合并到主 spec
 - [ ] 冲突已检测并处理（或确认无冲突）
-- [ ] feature 已移动至 `.edan-dev/archive/`
+- [ ] feature 已移动至 `EdanSpec/archive/`

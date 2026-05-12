@@ -1,5 +1,5 @@
 ---
-name: task-plan
+name: edanspec:task-plan
 description: 任务规划。将需求/设计分解为任务文档（验收标准、验证步骤、工时估算、依赖关系、风险）。触发场景：「任务规划」「任务拆分」「工作量估算」「排期」「这个需求怎么实现」「帮我把这个拆分一下」「从哪里开始」「项目太大不知道怎么下手」。不适用于范围明确的单文件更改、简单 bug 修复。
 ---
 
@@ -51,6 +51,34 @@ description: 任务规划。将需求/设计分解为任务文档（验收标准
 2. 每 2-3 个任务设置检查点——在 `tasks.md` 中用 `<!-- CHECKPOINT: 描述 -->` 标记，检查点必须有可验证条件（如"注册+登录可端到端测试"）
 3. 高风险任务尽早安排
 
+### 并行组标记
+
+如果两个或多个任务可以并行执行（无依赖关系且无文件交集），在 tasks.md 中使用 HTML 注释标记并行组：
+
+```markdown
+<!-- PARALLEL: Task-001, Task-002 -->
+```
+
+**标记规则：**
+- 注释放在并行组的第一个任务上方
+- 列出所有可并行任务的 ID，用逗号分隔
+- 仅标记**同一并行组内**的任务，不标记依赖关系
+- 如果有多个独立并行组，分别标记：
+
+```markdown
+<!-- PARALLEL: Task-001, Task-002 -->
+- Task-001: ...
+- Task-002: ...
+
+<!-- CHECKPOINT: 基础功能完成 -->
+
+<!-- PARALLEL: Task-004, Task-005 -->
+- Task-004: ...
+- Task-005: ...
+```
+
+> task-implement 阶段会扫描这些注释来确定并行执行策略。详见 `skills/task-implement/references/parallel-execution.md`。
+
 ---
 
 ## 任务复杂度分级
@@ -91,8 +119,8 @@ description: 任务规划。将需求/设计分解为任务文档（验收标准
 
 | 优先级 | 文档 | 来源 |
 |--------|------|------|
-| 1（重量评审结论） | `review/solution.md` + `review/detail.md` | `edan-dev:design-review` 产出 |
-| 2（轻量方案） | `proposal.md` + `design.md` + `specs/` | `edan-dev:create-spec` 产出 |
+| 1（重量评审结论） | `review/solution.md` + `review/detail.md` | `edanspec:design-review` 产出 |
+| 2（轻量方案） | `proposal.md` + `design.md` + `specs/` | `edanspec:create-spec` 产出 |
 | 3（无方案文档） | 直接基于需求描述 | 无上游文档时 |
 
 **读取策略：** 选择最高可用的优先级作为主要输入，但其依赖的低优先级文档仍需读取（如 review 文档依赖 proposal/design）。
@@ -100,7 +128,7 @@ description: 任务规划。将需求/设计分解为任务文档（验收标准
 ## 输出文件
 
 输出到 feature 目录：
-- `.edan-dev/feature/<name>/tasks.md` — 任务清单，驱动 implement 技能
+- `EdanSpec/feature/<name>/tasks.md` — 任务清单，驱动 implement 技能
 
 **生成后同步更新 `status.json`**：
 1. 在 `artifactGraph` 中追加 tasks 条目：
@@ -115,21 +143,21 @@ description: 任务规划。将需求/设计分解为任务文档（验收标准
      "status": "ready",
      "dependsOn": ["Task-XXX"],
      "files": ["path/to/file"],
-     "completedAcceptance": 0,
-     "totalAcceptance": N,
+     "currentIncrement": 0,
+     "totalIncrements": N,
      "lastModified": null
    }
    ```
    - 无依赖或依赖已满足 → `status: "ready"`
    - 有未完成的依赖 → `status: "pending"`
-   - `completedAcceptance` = 已完成的验收标准数，初始值为 0，每完成一个加 1
-   - `totalAcceptance` = 该任务的验收标准（Scenario / SHALL 语句）数量
+   - `currentIncrement` = 已完成的验收标准（增量）数，初始值为 0，每完成一个加 1
+   - `totalIncrements` = 该任务的验收标准（Scenario / SHALL 语句）数量，即总增量数
 
 ---
 
-## 常见借口
+## 常见误区与反驳
 
-> 通用借口见 `AGENT.md`。
+> 通用误区见 `AGENT.md`。
 
 | 说辞 | 真相 |
 |------|------|
@@ -154,6 +182,7 @@ description: 任务规划。将需求/设计分解为任务文档（验收标准
 - [ ] 没有任务超过 7 个文件（L 级上限）
 - [ ] 主要阶段存在检查点
 - [ ] 高风险任务有应对策略
+- [ ] 可并行的任务已用 `<!-- PARALLEL: Task-XXX, Task-YYY -->` 注释标记
 
 ## 完成后引导
 

@@ -1,5 +1,5 @@
 ---
-name: explore
+name: edanspec:explore
 description: 进入探索模式——用反问引导用户逐步明确需求，调查代码库、比较方案、发现风险。触发场景：用户需求不明确、"先看看怎么做"、"调研一下"、"分析一下"。纯对话探索，不生成文件，完成后引导 create-spec。不适用于明确要实现的需求。
 ---
 
@@ -7,7 +7,7 @@ description: 进入探索模式——用反问引导用户逐步明确需求，�
 
 在动手之前帮助思考。调查代码库、比较方案、发现风险。
 
-**不生成任何文件，不编写应用代码。** 用户要求实现或生成文档时，引导使用 `edan-dev:create-spec` 或 `edan-dev:design-review`。
+**不生成任何文件，不编写应用代码。** 用户要求实现或生成文档时，引导使用 `edanspec:create-spec` 或 `edanspec:design-review`。
 
 ## 触发条件
 
@@ -136,9 +136,9 @@ C) OAuth2，改动最大，但后续扩展性好
 
 | 复杂度 | 引导话术 |
 |--------|---------|
-| 小改动（1-2 文件） | "确认没问题。要我执行 `edan-dev:create-spec` 开始吗？" |
-| 中等功能（3-4 文件） | "确认没问题。要我执行 `edan-dev:create-spec` 创建 feature 并生成方案文档吗？" |
-| 大功能/架构变更（5+ 文件） | "确认没问题。涉及架构变更，建议先执行 `edan-dev:create-spec`，再走 `edan-dev:design-review`。要我开始吗？" |
+| 小改动（1-2 文件） | "确认没问题。要我执行 `edanspec:create-spec` 开始吗？" |
+| 中等功能（3-4 文件） | "确认没问题。要我执行 `edanspec:create-spec` 创建 feature 并生成方案文档吗？" |
+| 大功能/架构变更（5+ 文件） | "确认没问题。涉及架构变更，建议先执行 `edanspec:create-spec`，再走 `edanspec:design-review`。要我开始吗？" |
 
 **用户说"先不急"时**：不强制引导，结束探索即可。
 

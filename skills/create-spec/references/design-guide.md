@@ -1,6 +1,6 @@
 # 技术设计（design.md）编写规范
 
-`design.md` 由 `create-spec` 生成，位于 `.edan-dev/feature/<name>/design.md`。本规范定义其决策记录格式，供生成时参考。
+`design.md` 由 `create-spec` 生成，位于 `EdanSpec/feature/<name>/design.md`。本规范定义其决策记录格式，供生成时参考。
 
 ## 文档结构
 

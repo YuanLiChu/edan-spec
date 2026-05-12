@@ -64,13 +64,13 @@
 
 ## 变更管理
 
-所有代码变更通过变更目录（`.edan-dev/feature/{timestamp}-{topic}/`）进行追踪与管理：
+所有代码变更通过变更目录（`EdanSpec/feature/{timestamp}-{topic}/`）进行追踪与管理：
 
 - **一个变更 = 一个目录** — 聚合 proposal、specs、design、tasks 等交付物
 - **状态驱动** — 从文件系统恢复上下文，不依赖会话记忆
 - **tasks.md 是唯一进度来源** — 采用 checkbox 格式，驱动 implement 流程
-- **status.json 同步** — 每次创建或更新交付物后同步更新 `artifacts` 字段
-- **完成后归档** — 移至 `.edan-dev/archive/`
+- **status.json 同步** — 每次创建或更新交付物后同步更新 `artifactGraph` 字段
+- **完成后归档** — 移至 `EdanSpec/archive/`
 
 新会话启动时的上下文恢复流程见"上下文管理"章节。
 
@@ -131,7 +131,7 @@
 
 新会话启动或中断恢复时，按以下检查清单重建上下文：
 
-1. 检查 `.edan-dev/feature/` 是否存在活跃变更（`status.json` 中 `state: "active"`）
+1. 检查 `EdanSpec/feature/` 是否存在活跃变更（`status.json` 中 `state: "active"`）
 2. 读取 `status.json` 确认当前阶段和已完成的交付物
 3. 读取 `tasks.md` 确认待办任务
 4. 仅加载与下一步任务相关的源文件
@@ -251,6 +251,6 @@ Plan:
 9. 跳过方案设计直接编码
 10. 以"看起来对"为由跳过验证
 
-## 常见借口与反驳
+## 常见误区与反驳
 
-见 `docs/anti-patterns.md`。六类借口：太简单、后面补、差不多、不用确认、效率优先、场景特殊。核心原则：**识别到借口时立即停止，对照真相反思。**
+见 `docs/anti-patterns.md`。六类误区：太简单、后面补、差不多、不用确认、效率优先、场景特殊。核心原则：**识别到误区时立即停止，对照真相反思。**

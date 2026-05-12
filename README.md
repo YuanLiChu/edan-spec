@@ -19,7 +19,7 @@
 │   ├── code-reviewer.md         # 代码审查专家（四维度评估）
 │   └── security-reviewer.md     # 安全审查专家（五维度检查）
 ├── docs/                        # 补充文档
-│   ├── anti-patterns.md         # 常见借口与反驳
+│   ├── anti-patterns.md         # 常见误区与反驳
 │   └── git-conventions.md       # Git 操作规范
 ├── rules/                       # 编码规范
 │   ├── common/                  # 通用编码风格（所有语言适用）
@@ -36,23 +36,50 @@
 │   ├── security-review/         # 安全审查（五维度检查）
 │   ├── verify/                  # 结构化验证（三维度验收）
 │   └── archive/                 # 归档（delta spec 合并 + 文件移动）
-└── .edan-dev/                   # 运行时目录（生成产物）
+└── EdanSpec/                    # 运行时目录（生成产物）
     ├── feature/                 # 变更工单目录（运行时生成）
-    └── archive/                 # 归档目录（完成后移动）
+    ├── archive/                 # 归档目录（完成后移动）
+    └── specs/                   # 主 spec 存储（delta spec 合并后归档于此）
 ```
 
 ## 工作流
 
+```mermaid
+flowchart LR
+    A1[模糊需求] --> explore
+    A2[清晰需求] --> create_spec
+    explore --> create_spec[创建规格]
+    
+    create_spec -->|小功能| task_plan[任务规划]
+    create_spec -->|大功能| design_review[设计评审]
+    design_review --> task_plan
+    
+    task_plan --> task_impl[任务实现]
+    
+    subgraph 审查关卡
+        code_review[代码审查]
+        security_review[安全审查]
+        verify[结构化验证]
+    end
+    
+    task_impl --> code_review --> security_review --> verify
+    
+    verify --> archive[归档]
+    
+    %% 回流线
+    task_impl -.->|需求变更| explore
+    create_spec -.->|需求变更| explore
+    design_review -.->|需求变更| explore
+    task_impl -.->|反复修复失败| debugging -.->|重估方案| explore
 ```
-模糊需求 ──→ explore ──→ create-spec ──→ task-plan ──→ task-implement ──→ verify ──→ archive
-                    │         │
-                    │         ↓（大功能/架构变更时引导）
-                    │      design-review
-                    │                              ↓（完成后循环）
-                    │                     code-review / security-review
-                    ↓（明确需求可跳过）
-                create-spec
-```
+
+**两个入口**：模糊需求走 `explore` 澄清后再进 `create-spec`；清晰需求跳过 `explore` 直接进入 `create-spec`。
+
+**四条回流线**：
+1. 需求变更/方向调整 → 回到 `explore` 重新评估
+2. `design-review` 完成后 → 回归 `task-plan` 拆分任务
+3. `task-implement` 完成后 → 三个审查关卡全部通过才继续归档
+4. 同一问题反复修复失败 → 第 1-2 次正常修复；第 3 次停下来重新定位根因（调 `debugging`）；第 4 次回到 `explore` 重新审视方案；第 5 次停止并报告
 
 ### 各阶段说明
 
@@ -111,12 +138,12 @@
 
 ## 变更管理
 
-所有代码变更均应通过变更请求（`.edan-dev/feature/{timestamp}-{topic}/`）进行追踪与管理：
+所有代码变更均应通过变更请求（`EdanSpec/feature/{timestamp}-{topic}/`）进行追踪与管理：
 
 - **一个变更 = 一个目录** — 聚合 proposal、specs、design、tasks 等交付物
 - **状态驱动** — 从文件系统恢复上下文，不依赖会话记忆
 - **tasks.md 是唯一进度来源** — checkbox 格式，驱动 implement 技能
-- **status.json 同步** — 每次创建/更新交付物后同步更新 `artifacts` 字段
-- **完成后归档** — 移至 `.edan-dev/archive/`
+- **status.json 同步** — 每次创建/更新交付物后同步更新 `artifactGraph` 字段
+- **完成后归档** — 移至 `EdanSpec/archive/`
 
 详见 [AGENT.md](AGENT.md) 中的变更管理机制。
