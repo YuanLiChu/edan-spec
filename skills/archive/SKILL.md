@@ -10,11 +10,11 @@ description: 归档已完成的 feature——引导验证（可选）、delta sp
 ## 流程
 
 ```
-确认目标 feature → 引导是否先 verify
-                      ├─ 先 verify → 有 CRITICAL？拒绝归档
-                      │                ↓ 无 CRITICAL
-                      │             delta spec 合并 → 冲突检测 → mv 到 archive
-                      └─ 跳过 verify → delta spec 合并 → 冲突检测 → mv 到 archive
+确认目标 feature → 检查 status.json 审查状态
+                      ├─ 审查关卡未完成 → 引导回退到 edan-dev:task-implement 完成剩余关卡
+                      ├─ 验证状态 pending → 引导执行 edan-dev:verify，等待结果后回来
+                      ├─ 审查全部通过 → delta spec 合并 → 冲突检测 → mv 到 archive
+                      └─ 已验证但有 IMPORTANT → 展示报告，用户确认后继续 → delta spec 合并 → mv 到 archive
 ```
 
 ## 1. 确认目标
@@ -28,28 +28,37 @@ find .edan-dev/feature/ -maxdepth 1 -mindepth 1 -type d | sort
 
 对每个 feature 读 `status.json` 和 `tasks.md` 显示完成状态。
 
-## 2. 引导验证
+## 2. 检查审查与验证状态
 
-确认目标 feature 后，**必须先引导用户选择**：
+读取目标 feature 的 `status.json`，检查 `reviewGate` 字段。
 
-> "准备归档 `{feature}`。**要我先用 `edan-dev:verify` 跑一遍三维度验证吗？**（推荐）
-> 还是直接执行归档？"
+### 2.1 审查关卡未完成（reviewGate 中有 pending 或 failed）
 
-### 用户选择先验证
+> "`{feature}` 的审查关卡尚未全部完成。**请先调用 `edan-dev:task-implement` 完成剩余的审查关卡**，完成后再回来执行归档。"
 
-调用 `edan-dev:verify` 对目标 feature 执行三维度验证。
+**停止后续步骤，等待用户回来。**
 
-- **有 CRITICAL** → 展示报告，拒绝归档："发现 N 个 CRITICAL 问题，解决前不能归档"。引导用户回退到 `edan-dev:task-implement` 修复对应任务
-- **仅有 IMPORTANT** → 展示报告，用户确认后继续
-- **全部通过** → 展示报告，继续归档
+### 2.2 验证未执行（reviewGate.verify.status = pending）
 
-**验证发现 CRITICAL 时不能跳过，必须修复后再次验证。**
+> "`{feature}` 尚未执行验证。**请先调用 `edan-dev:verify` 跑一遍三维度验证**，完成后再回来执行归档。"
 
-### 用户选择跳过验证
+**停止后续步骤，等待用户回来。**
 
-直接进入步骤 3（delta spec 合并）。不执行验证，不展示报告。
+### 2.3 审查全部通过（reviewGate 全部 done，verify.hasCritical = false）
 
-> ⚠️ 用户明确要求跳过时方可执行此路径。不要自作主张跳过。
+展示审查和验证报告摘要，直接进入步骤 3（delta spec 合并）。
+
+### 2.4 已验证但有 IMPORTANT（verify.status = done，无 CRITICAL）
+
+展示验证报告，告知用户存在 N 个 IMPORTANT 建议，确认是否继续归档。用户确认后进入步骤 3。
+
+### 2.5 验证失败（reviewGate.verify.status = failed 或 hasCritical = true）
+
+展示验证报告，拒绝归档：
+
+> "发现 N 个 CRITICAL 问题，解决前不能归档。请调用 `edan-dev:task-implement` 修复对应任务，修复后重新运行 verify。"
+
+**停止后续步骤。**
 
 ## 3. Delta Spec 合并
 
@@ -145,8 +154,10 @@ mkdir -p .edan-dev/archive
 mv .edan-dev/feature/{name} .edan-dev/archive/
 ```
 
+移动后更新 `status.json`：`state = "archived"`。
+
 归档前最终确认：
-- [ ] 验证通过（无 CRITICAL）
+- [ ] reviewGate 三个关卡全部 done
 - [ ] delta spec 已合并（或无 delta spec）
 - [ ] tasks.md 所有 checkbox 已勾选
 - [ ] 代码已提交
@@ -160,8 +171,8 @@ mv .edan-dev/feature/{name} .edan-dev/archive/
 
 | skill | 触发方式 | 职责 |
 |-------|---------|------|
-| **verify** | 独立调用，或由 archive 内部调用 | 三维度验证 → 输出报告 |
-| **archive** | 用户主动调用 | 引导验证 → delta spec 合并 → 移动到 archive |
+| **verify** | 独立调用，或由 archive 引导 | 三维度验证 → 输出报告 → 更新 status.json 中 verification 状态 |
+| **archive** | 用户主动调用 | 检查验证状态 → delta spec 合并 → 移动到 archive |
 
 ## 常见借口
 
@@ -169,23 +180,23 @@ mv .edan-dev/feature/{name} .edan-dev/archive/
 
 | 说辞 | 真相 |
 |------|------|
-| "直接归档不用验证" | 用户明确跳过时可以跳过。但不要自作主张跳过 |
+| "直接归档不用验证" | 验证状态未 passed 时不能归档。引导去跑 verify，不要自作主张跳过 |
 | "delta spec 后面再合并也行" | 归档后找回来合并更难。现在合并只需 2 分钟 |
 
 ## 警示信号
 
-- 未引导用户选择是否验证就直接执行归档
-- 用户未明确跳过验证时自行决定跳过
-- 有 CRITICAL 问题仍批准归档
+- verification 为 pending 时未引导验证就直接执行归档
+- 自作主张执行验证而不是引导用户调用 verify
+- verification 为 failed 仍批准归档
 - delta spec 合并时覆盖了主 spec 的已有内容
 - 未检测冲突就移动文件
 
 ## 验证
 
 - [ ] 目标 feature 已确认
-- [ ] 已引导用户选择是否先验证
-- [ ] 若用户选择验证：验证已通过（无 CRITICAL，或用户确认 IMPORTANT 后可继续）
-- [ ] 若用户选择跳过：用户已明确确认
+- [ ] 验证状态已检查：reviewGate.verify.status 为 done
+- [ ] 若 reviewGate 有 pending：已引导用户执行 edan-dev:task-implement
+- [ ] 若 reviewGate.verify 为 failed：已拒绝归档
 - [ ] delta spec 已合并（或确认无 delta spec）
 - [ ] 冲突已检测并处理（或确认无冲突）
 - [ ] feature 已移动至 `.edan-dev/archive/`

@@ -45,6 +45,17 @@ description: 合入前安全审查——输入验证、认证/授权、数据保
 
 **有 CRITICAL → 不批准合并。**
 
+## 状态更新
+
+如果在 feature 目录下（`status.json` 存在），审查完成后更新 `reviewGate`：
+```json
+{ "reviewGate": { "securityReview": { "status": "done" 或 "failed", "lastRun": "...", "hasCritical": true/false } } }
+```
+- 有 CRITICAL → `status: "failed"`, `hasCritical: true`
+- 无 CRITICAL → `status: "done"`, `hasCritical: false`
+
+如果不在 feature 目录下（无 `status.json`），只输出报告，不更新状态。
+
 ## 常见借口
 
 > 通用借口见 `AGENT.md`。

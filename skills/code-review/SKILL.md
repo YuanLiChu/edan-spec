@@ -48,6 +48,17 @@ description: 合并前四维度审查（正确性、可读性、架构、性能�
 
 **有 CRITICAL → 不批准合并。**
 
+## 状态更新
+
+如果在 feature 目录下（`status.json` 存在），审查完成后更新 `reviewGate`：
+```json
+{ "reviewGate": { "codeReview": { "status": "done" 或 "failed", "lastRun": "...", "hasCritical": true/false } } }
+```
+- 有 CRITICAL → `status: "failed"`, `hasCritical: true`
+- 无 CRITICAL → `status: "done"`, `hasCritical: false`
+
+如果不在 feature 目录下（无 `status.json`），只输出报告，不更新状态。
+
 ## 常见借口
 
 > 通用借口见 `AGENT.md`。

@@ -15,29 +15,26 @@ description: 任务规划。将需求/设计分解为任务文档（验收标准
 
 **规划阶段不写代码。**
 
-### 梳理依赖关系
-
-```
-数据库 schema → API 模型 → API 端点 → 前端组件 → UI
-```
-
-按依赖关系自底向上实施。
-
 ### 按完整功能拆分
 
-**正确方式**：
+**拆分方式**（按功能垂直切分，每个任务独立可测试）：
 ```
 任务1：用户注册功能（schema + API + UI）
 任务2：用户登录功能（schema + API + UI）
 ```
 
-每个功能任务独立可测试。
-
-**错误方式**：
+**错误方式**（按技术层水平切分，任务之间强耦合）：
 ```
 任务1：所有数据库表
 任务2：所有 API
 任务3：所有 UI
+```
+
+### 任务内实施顺序
+
+单个任务内部按依赖关系自底向上实施：
+```
+数据库 schema → API 模型 → API 端点 → 前端组件 → UI
 ```
 
 ### 编写任务
@@ -46,12 +43,12 @@ description: 任务规划。将需求/设计分解为任务文档（验收标准
 
 验收标准需具体可测试："输入正确用户名密码后跳转到首页"优于"用户可以登录"。
 
-详细模板见 `templates/task-template.md`。
+详细模板见 `skills/task-plan/templates/task-template.md`。
 
 ### 排序与检查点
 
 1. 满足依赖关系
-2. 每 2-3 个任务设置检查点
+2. 每 2-3 个任务设置检查点——在 `tasks.md` 中用 `<!-- CHECKPOINT: 描述 -->` 标记，检查点必须有可验证条件（如"注册+登录可端到端测试"）
 3. 高风险任务尽早安排
 
 ---
@@ -98,14 +95,35 @@ description: 任务规划。将需求/设计分解为任务文档（验收标准
 | 2（轻量方案） | `proposal.md` + `design.md` + `specs/` | `edan-dev:create-spec` 产出 |
 | 3（无方案文档） | 直接基于需求描述 | 无上游文档时 |
 
-**优先级 1 → 2 → 3**，高优先级存在时作为主要输入，低优先级作为补充。
+**读取策略：** 选择最高可用的优先级作为主要输入，但其依赖的低优先级文档仍需读取（如 review 文档依赖 proposal/design）。
 
 ## 输出文件
 
-输出到feature：
+输出到 feature 目录：
 - `.edan-dev/feature/<name>/tasks.md` — 任务清单，驱动 implement 技能
 
-**生成后同步更新 `status.json`**：`artifacts.tasks: true`。
+**生成后同步更新 `status.json`**：
+1. 在 `artifactGraph` 中追加 tasks 条目：
+   ```json
+   { "id": "tasks", "file": "tasks.md", "status": "done", "dependsOn": ["proposal", "specs", "design"], "lastModified": "YYYY-MM-DDTHH:mm:ss" }
+   ```
+2. 初始化 `taskGraph` 数组，每个任务对应一条：
+   ```json
+   {
+     "id": "Task-001",
+     "title": "任务标题",
+     "status": "ready",
+     "dependsOn": ["Task-XXX"],
+     "files": ["path/to/file"],
+     "completedAcceptance": 0,
+     "totalAcceptance": N,
+     "lastModified": null
+   }
+   ```
+   - 无依赖或依赖已满足 → `status: "ready"`
+   - 有未完成的依赖 → `status: "pending"`
+   - `completedAcceptance` = 已完成的验收标准数，初始值为 0，每完成一个加 1
+   - `totalAcceptance` = 该任务的验收标准（Scenario / SHALL 语句）数量
 
 ---
 
@@ -122,7 +140,7 @@ description: 任务规划。将需求/设计分解为任务文档（验收标准
 ## 警示信号
 
 - 任务没有验收标准或验收标准不可测试
-- 任务涉及超过 5 个文件但没有拆分
+- 任务涉及超过 7 个文件但没有拆分
 - 所有任务都是 L 或 XL 大小
 - 没有检查点，或检查点没有可验证条件
 - 任务标题包含"和"（这是两个任务的迹象）
@@ -133,7 +151,7 @@ description: 任务规划。将需求/设计分解为任务文档（验收标准
 - [ ] 每个任务都有验收标准
 - [ ] 每个任务都有验证步骤
 - [ ] 任务依赖关系已识别
-- [ ] 没有任务超过约 5 个文件
+- [ ] 没有任务超过 7 个文件（L 级上限）
 - [ ] 主要阶段存在检查点
 - [ ] 高风险任务有应对策略
 

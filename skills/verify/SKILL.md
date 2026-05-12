@@ -124,11 +124,11 @@ feature 归档前的最终关卡。"拿证据说话"——但结构化告诉你*
 ## 归档前流程
 
 1. 运行三维度验证
-2. 有 CRITICAL → 拒绝归档，返回报告。引导用户回退到 `edan-dev:task-implement` 修复对应任务
-3. 有 IMPORTANT → 展示报告，用户确认后仍可归档
-4. 全部通过 → 展示报告，输出"验证通过，可以归档"
+2. 有 CRITICAL → 拒绝归档，返回报告。引导用户回退到 `edan-dev:task-implement` 修复对应任务。更新 `status.json`：`reviewGate.verify.status = "failed"`，`reviewGate.verify.hasCritical = true`
+3. 有 IMPORTANT → 展示报告，用户确认后仍可归档。更新 `status.json`：`reviewGate.verify.status = "done"`，`reviewGate.verify.hasCritical = false`
+4. 全部通过 → 展示报告，输出"验证通过，可以归档"。更新 `status.json`：`reviewGate.verify.status = "done"`，`reviewGate.verify.hasCritical = false`
 
-**verify 只负责验证和输出报告。delta spec 合并和文件移动由 `edan-dev:archive` 负责。**
+**verify 只负责验证、输出报告和更新 status.json。delta spec 合并和文件移动由 `edan-dev:archive` 负责。**
 
 ## 常见借口
 

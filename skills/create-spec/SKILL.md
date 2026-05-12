@@ -26,7 +26,7 @@ find .edan-dev/feature/ -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort
 | 有 1 个活跃 feature，但用户描述了明显不同的新需求 | **新建** | 确认旧 feature 状态 → 创建新 feature |
 | 有 2+ 活跃 feature | 列出让用户选择 | 选恢复或新建 |
 
-**判断"同一需求"的依据：** 用户描述中的关键词与 feature name / proposal.md 标题的语义匹配度。匹配则恢复，不匹配则新建。
+> **判断"同一需求"的依据：** 用户描述中的关键词与 feature name / proposal.md 标题的语义匹配度。匹配则恢复，不匹配则新建。
 
 ## 目录结构
 
@@ -56,7 +56,7 @@ find .edan-dev/feature/ -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort
 ```
 
 - `specs` 和 `design` 都依赖 `proposal`，但两者之间无依赖，可并行
-- 小功能可省略 `proposal`，此时 `specs` 和 `design` 为根节点
+- `proposal` 不可省略，即使只有一两句话也要写
 - 所有产物完成 → 引导进入 task-plan
 
 ## 状态模型
@@ -76,23 +76,24 @@ find .edan-dev/feature/ -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort
 **状态流转：**
 
 ```
-pending ──(依赖全done)──→ ready ──(文件写入)──→ done
-  ↑                                                        │
-  └──────────────(文件被变更)──────────────────────────────┘
+pending → ready → done
+  ↑                │
+  └──(文件变更)────┘
 ```
 
 **状态计算规则：**
 
 - `pending`：初始状态，或依赖未满足
 - `ready`：dependsOn 中所有 artifact 的 status 为 done，且本地文件不存在或内容为空
-- `done`：文件存在且内容非空
+- `draft`：文件存在但内容不完整或需要用户确认，依赖已满足
+- `done`：文件存在且内容非空，用户已确认
 - 每次读写文件后**必须重新计算**所有 artifact 的 status，不要缓存
 
 ## 恢复流程
 
 1. 读 `status.json`，重新计算每个 artifact 的 status（基于文件是否存在 + 依赖关系）
 2. 找出第一个 `ready` 的 artifact → 从它开始继续
-3. 如果全部 done → 告知用户方案已完成，引导进入 task-plan
+3. 如果全部 done（proposal + specs + design）→ 告知用户方案已完成，引导进入 task-plan；若 tasks 也 done → 告知任务已拆分完毕，可进入实施阶段
 4. 如果全部 pending → 从零开始
 
 ```
@@ -126,7 +127,7 @@ pending ──(依赖全done)──→ ready ──(文件写入)──→ done
   3. 影响 design（技术方案/决策变了）→ 更新 design.md
   4. 级联影响（需求变了 → 设计也要变）→ 先更新 spec，再更新 design，最后更新 proposal
   ↓
-按依赖顺序更新：proposal → specs → design
+按变更影响自底向上更新：specs(what) → design(how) → proposal(summary)
   ↓
 展示变更摘要，用户确认
   ↓
@@ -232,15 +233,35 @@ mkdir -p ".edan-dev/archive"
     { "id": "specs", "file": "specs/", "status": "pending", "dependsOn": ["proposal"], "items": [], "lastModified": null },
     { "id": "design", "file": "design.md", "status": "pending", "dependsOn": ["proposal"], "lastModified": null }
   ],
-  "artifacts": { "proposal": false, "specs": [], "design": false, "tasks": false },
   "conflicts": [],
-  "review_skipped": false
+  "review_skipped": false,
+  "reviewGate": {
+    "codeReview": { "status": "pending", "lastRun": null, "hasCritical": false },
+    "securityReview": { "status": "pending", "lastRun": null, "hasCritical": false },
+    "verify": { "status": "pending", "lastRun": null, "hasCritical": false }
+  },
+  "taskGraph": []
 }
+```
+
+**`state` 字段取值与流转：**
+
+| 值 | 含义 | 何时写入 |
+|---|---|---|
+| `active` | feature 进行中 | create-spec 初始化 |
+| `completed` | 全部任务 + 审查关卡通过，待归档 | task-implement 步骤六完成后 |
+| `archived` | 已移入 `.edan-dev/archive/` | archive 移动文件后 |
+| `abandoned` | 用户主动放弃 | 用户明确说放弃时 |
+
+```
+active ──(全部任务+审查完成)──→ completed ──(归档)──→ archived
+  │
+  └──(用户放弃)──→ abandoned
 ```
 
 ### 3. 冲突检测
 
-生成 specs 前，扫描活跃 feature 的 `specs/` 目录，检查是否有其他活跃 feature 修改了同一 capability。有冲突则提前警告用户。确认后记录到 `status.json.conflicts`。
+生成 specs 前，扫描活跃 feature 的 `specs/` 目录，检查是否有其他活跃 feature 修改了同一 capability。有冲突则展示警告，用户确认后记录到 `status.json.conflicts`。
 
 ### 4. 按依赖图生成产物
 
@@ -262,10 +283,12 @@ mkdir -p ".edan-dev/archive"
      c. 生成产物（见下方各产物指南）
      d. 验证文件存在且内容非空
      e. 更新 status.json：status → "done"，记录 lastModified
-     f. 向用户展示摘要，等待确认
+     f. 向用户展示生成摘要
 ```
 
-#### 4.1 生成 proposal.md（大功能时）
+#### 4.1 生成 proposal.md
+
+所有功能都必须生成 proposal，小功能可以极简：
 
 ```markdown
 # {Topic} 提案
@@ -283,7 +306,7 @@ mkdir -p ".edan-dev/archive"
 - `path/to/file`：[变更内容]
 ```
 
-#### 4.2 生成 spec.md
+#### 4.2 生成 specs/{capability}-spec.md
 
 写入 `specs/{capability}-spec.md`：
 
@@ -302,7 +325,7 @@ mkdir -p ".edan-dev/archive"
 - **THEN** {预期结果}
 ```
 
-Delta Spec 标记规则：
+### Delta Spec 标记规则
 
 | 标记 | 何时使用 |
 |------|---------|
@@ -315,7 +338,7 @@ Delta Spec 标记规则：
 
 先读取 `references/design-guide.md`，再生成技术设计。
 
-有项目时沿用现有技术栈，不要自作主张换框架。新项目参考 `references/platform-*.md` 逐项确认技术选型。
+已有项目时沿用现有技术栈，不要自作主张换框架。新项目参考 `references/platform-*.md` 逐项确认技术选型。
 
 ### 5. 逐章确认
 
