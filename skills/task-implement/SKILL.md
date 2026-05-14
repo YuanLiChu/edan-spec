@@ -14,6 +14,8 @@ description: 依据任务文档执行代码实现。增量式开发 + 测试驱�
   ↓
 加载（读 tasks.md → 检查依赖 → 判定串行/并行）
   ↓
+准备（检测环境命令 → 加载规范 → 内联计划）
+  ↓
 执行（串行 TDD 循环 或 并行 SubAgent + worktree）
   ↓
 提交 + 更新（原子提交 → checkbox → status.json taskGraph）
@@ -65,7 +67,7 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 - `pending`：初始状态，或依赖未满足
 - `ready`：dependsOn 中所有任务的 status 为 done
 - `in_progress`：正在执行中，有部分增量完成但未全部完成
-- `done`：tasks.md 中该任务的所有验收标准 checkbox 均为 `[x]`
+- `done`：tasks.md 中该任务的所有增量 checkbox 均为 `[x]`
 - 每次提交后**必须重新计算**所有任务的 status，不要缓存
 
 ## 步骤一：恢复
@@ -96,17 +98,17 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 
 **从 tasks.md 重新生成 taskGraph 的规则：**
 1. 解析 tasks.md 中所有任务的 ID、标题、依赖关系、涉及文件
-2. 解析每个任务的验收标准 checkbox：全 `[x]` → `done`，部分 `[x]` → `in_progress`，无 `[x]` 且依赖满足 → `ready`，依赖未满足 → `pending`
-3. 估算每个任务的增量数（验收标准数量 = 增量数）
+2. 解析每个任务的增量 checkbox：全 `[x]` → `done`，部分 `[x]` → `in_progress`，无 `[x]` 且依赖满足 → `ready`，依赖未满足 → `pending`
+3. 估算每个任务的增量数（tasks.md 中增量计划的条目数 = 增量数）
 4. 写入 status.json
 
-**警示信号**：不检查 git 状态就继续、跳过检查点、checkbox 与 git 提交不一致却不修正、taskGraph 与 tasks.md 不一致时不重新计算。
+**警示信号**：不检查 git 状态就继续、checkbox 与 git 提交不一致却不修正、taskGraph 与 tasks.md 不一致时不重新计算。
 
 ---
 
 ## 步骤二：加载
 
-读取 `EdanSpec/feature/<name>/tasks.md`，记录验收标准、涉及文件、检查点位置。
+读取 `EdanSpec/feature/<name>/tasks.md`，记录验收标准、涉及文件、任务依赖关系。
 
 ### 依赖检查
 
@@ -145,20 +147,6 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 
 冲突不阻塞实现，但必须在归档前解决。
 
-### 检查点
-
-检查点是阶段关卡，不可跳过。到达时必须逐项验证，全部通过才能继续。
-
-**检查点执行流程**：
-
-1. **触发条件**：检查点之前所有任务的验收标准 checkbox 全为 `[x]`
-2. **暂停编码**，列出所有检查项
-3. **自动可验证项** → Agent 自动执行（构建、测试命令）
-4. **需手动验证项** → 列出清单，请求用户逐项确认
-5. **全部通过** → 检查项改为 `[x]`，继续下一个阶段
-6. **任一项失败** → 定位失败原因，返回对应任务修复后再验证，不继续后续任务
-7. 检查点未执行通过前，不加载/执行检查点之后的任何任务
-
 ---
 
 ## 步骤三：准备
@@ -194,33 +182,29 @@ RED（失败测试）→ GREEN（最小实现）→ REFACTOR（重构）→ 验�
 
 测试必须先写且先失败。实现刚好满足测试通过即可。编写测试前读 `references/tdd-principles.md`。
 
-**每个增量验证（5 项，全部必须通过）**：
-1. 测试通过
-2. 构建成功
-3. Lint 通过
-4. 类型检查通过
-5. 覆盖率达标（见下方覆盖率检查）
+### 验证规则
 
-**测试失败** → 调 `edanspec:debugging` 五步排障，不盲目改代码。
+每个增量提交前必须通过以下验证，全部必须通过：
 
-### 覆盖率检查（强制执行）
+1. **测试通过** — 该增量涉及的测试文件全部通过
+2. **构建成功** — 项目可编译
+3. **Lint 通过** — 代码风格无违规
+4. **类型检查通过** — 无类型错误
+5. **覆盖率达标** — 运行覆盖率工具检测，新增/修改文件达到基线要求（详见 `references/coverage-check.md`）
 
-每个任务完成后，必须实际运行覆盖率工具检测，不得推算。详见 `references/coverage-check.md`。
+> 覆盖率不得推算，必须实际运行覆盖率工具检测。
 
-### 验证分类
+**验证分类**：
 
-每个任务的验证步骤分两类，按不同方式执行：
-
-| 类型 | 执行方式 | 时机 |
-|------|---------|------|
-| 自动化验证（构建、测试、lint、类型检查） | Agent 自动执行命令 | TDD 循环中，提交前 |
-| 手动验证（模拟器操作、UI 视觉检查、完整流程走查） | 向用户逐项列出验证项，等待用户确认后打勾 | 自动化验证通过后、提交前 |
+| 类型 | 执行方式 |
+|------|---------|
+| 自动化验证（上述 5 项） | Agent 自动执行命令 |
+| 手动验证（模拟器操作、UI 视觉检查、完整流程走查） | **跳过，不执行**。Agent 仅执行自动化验证 |
 
 **规则**：
 - 自动化验证不通过 → 调 `edanspec:debugging` 排障，不得跳过
-- 手动验证项必须逐项列出，等待用户确认后才能打勾继续
-- 用户明确说"我自己验证"时，保留 `[ ]` 不做变更
-- 禁止将手动验证项直接标记为 `[x]`
+- 所有验证均为 Agent 可自动执行的命令验证，无需用户手动确认
+- 测试失败 → 调 `edanspec:debugging` 五步排障，不盲目改代码
 
 ### 串行路径
 
@@ -241,7 +225,7 @@ RED（失败测试）→ GREEN（最小实现）→ REFACTOR（重构）→ 验�
 feat: 实现任务创建功能
 
 - 新增 createTask 函数
-- 符合 Task-001 验收标准 #1, #2
+- 完成 Task-001 增量 1, 2
 
 Co-Authored-By: Claude
 ```
@@ -251,31 +235,39 @@ Co-Authored-By: Claude
 
 ### 更新状态
 
-每个任务完成后立即更新，不等全部完成。
+增量完成后立即更新，不等全部完成。
 
 | 操作 | 时机 |
 |------|------|
-| 验收标准满足 → 验收标准改为 `[x]` | 增量验证通过后 |
-| 验证步骤通过 → 验证步骤改为 `[x]` | 验证通过后 |
-| 检查点全部通过 → 检查项改为 `[x]` | 检查点验证后 |
+| 增量验证通过 → 对应增量改为 `[x]` | 增量验证通过后 |
 | 更新 taskGraph 中对应任务：`currentIncrement++`、`lastModified` | 每个增量完成后 |
 | 重新计算 taskGraph 所有任务 status | 每次提交后 |
-| 任务完成（所有验收标准 `[x]`）→ taskGraph status 改为 `done` | 任务所有验收标准满足后 |
+| 任务完成（所有增量 `[x]`）→ taskGraph status 改为 `done` | 任务所有增量完成后 |
 
 **taskGraph 重新计算规则：**
-1. 遍历每个任务，检查 tasks.md 中该任务的所有验收标准 checkbox
+1. 遍历每个任务，检查 tasks.md 中该任务的所有增量 checkbox
 2. 全部 `[x]` → status = `done`
 3. 部分 `[x]` → status = `in_progress`
 4. 无 `[x]` 但依赖全 done → status = `ready`
 5. 依赖未满足 → status = `pending`
-6. 更新 `currentIncrement` = 已完成的验收标准数量
-7. 更新 `totalIncrements` = 总验收标准数量
+6. 更新 `currentIncrement` = 已完成的增量数量
+7. 更新 `totalIncrements` = 总增量数量
+
+### 执行循环
+
+每个增量的完整流程是一个循环：
+
+```
+执行 TDD → 验证（5 项） → 原子提交 → 更新状态 → 下一个增量
+```
+
+循环终止条件：tasks.md 中所有任务的增量 checkbox 均为 `[x]` → 进入步骤六（审查关卡）。
 
 ---
 
 ## 步骤六：完成后审查关卡
 
-全部任务完成后，**必须通过三个审查关卡**，全部通过后才算实现完成。
+tasks.md 中所有任务完成后，**必须通过三个审查关卡**，全部通过后才算实现完成。
 
 ```
 tasks.md 全部 done
@@ -305,7 +297,7 @@ tasks.md 全部 done
 | reviewGate 状态 | 操作 |
 |----------------|------|
 | 全部 passed 且 hasCritical 全 false | 引导进入 archive |
-| 任一 hasCritical=true | 拒绝进入下一阶段，引导修复对应任务 |
+| 任一 hasCritical=true | 自动修复该关卡所有 CRITICAL 问题，修复后重新执行该关卡 |
 | 有 pending 关卡 | 执行第一个 pending 关卡（按 code-review → security-review → verify 顺序） |
 | 有 passed 关卡 | **直接跳过**，不重复执行。即使 code-review 中已引导过 security-review，仍以 reviewGate 状态为准 |
 
@@ -315,21 +307,21 @@ tasks.md 全部 done
 
 调用 `edanspec:code-review` 对当前 feature 的代码变更进行四维度审查。
 
-- **有 CRITICAL** → 展示报告，返回对应任务修复，修复后重新执行 code-review
+- **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后重新执行 code-review
 - **无 CRITICAL** → 更新 `reviewGate.codeReview.status = "passed"`、`lastRun` 记录时间、`hasCritical = false`、`findings` 记录各严重度数量，继续下一阶段
 
 ### 6.3 执行 security-review
 
 调用 `edanspec:security-review` 对当前 feature 的代码变更进行五维度安全审查。
 
-- **有 CRITICAL** → 展示报告，返回对应任务修复，修复后重新执行 security-review
+- **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后重新执行 security-review
 - **无 CRITICAL** → 更新 `reviewGate.securityReview.status = "passed"`、`lastRun` 记录时间、`hasCritical = false`、`findings` 记录各严重度数量，继续下一阶段
 
 ### 6.4 执行 verify
 
 调用 `edanspec:verify` 对当前 feature 执行三维度验证。
 
-- **有 CRITICAL** → 展示报告，返回对应任务修复，修复后重新执行 verify
+- **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后重新执行 verify
 - **无 CRITICAL** → 更新 `reviewGate.verify.status = "passed"`、`lastRun` 记录时间、`hasCritical = false`、`findings` 记录各严重度数量，实现完成
 
 ### 6.5 审查完成判定
@@ -352,10 +344,10 @@ tasks.md 全部 done
 | 3 — 持续可构建 | 每个增量后项目可编译、测试全绿 |
 | 4 — Feature Flag | 未完成功能用环境变量隐藏入口 |
 | 5 — 可回滚 | 每个增量可独立回退 |
-| 6 — 检查点必执行 | 逐项验证并打勾，不可跳过 |
+| 6 — 验证必执行 | 每个增量必须通过自动化验证，不可跳过 |
 | 7 — 并行有界 | 仅无文件重叠且无依赖时并行，合并后统一验证 |
 | 8 — 及时更新 | 任务完成后立即更新 checkbox 和 status.json |
-| 9 — 覆盖率必检 | 每个任务完成后必须运行覆盖率工具检测并记录数值，不得推算 |
+| 9 — 覆盖率必检 | 每个增量完成后必须运行覆盖率工具检测并记录数值，不得推算 |
 | 10 — 审查必过 | 全部任务完成后必须通过 code-review、security-review、verify，缺一不算完成 |
 
 ---
@@ -373,11 +365,10 @@ tasks.md 全部 done
 
 - 超过 100 行代码未执行测试
 - 单个增量包含多个无关联改动
-- 跳过测试/验证/检查点
+- 跳过测试/验证
 - **跳过覆盖率检查或凭感觉判断**（必须运行工具检测）
-- 手动验证项未经用户确认直接打勾
 - 修改任务范围之外的文件
-- 只更新验收标准 checkbox，遗漏验证步骤/检查项
+- 只更新增量 checkbox，遗漏 taskGraph 状态更新
 - 任务完成不及时更新 taskGraph，恢复时状态不一致
 - taskGraph 与 tasks.md checkbox 不一致时不重新计算
 - 并行条件不满足时强行并行（项目骨架未完成、文件有交集）
@@ -387,7 +378,7 @@ tasks.md 全部 done
 
 ## 验证与引导
 
-**单个任务完成**：验收标准满足、测试全通过、已提交、状态已更新。
+**单个任务完成**：所有增量 checkbox 全 `[x]`、测试全通过、已提交、状态已更新。
 
 **全部任务完成**：全量测试通过、构建产物干净、工作区无未提交变更、三个审查关卡全部通过。
 
