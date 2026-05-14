@@ -45,6 +45,13 @@ Java 特定的编码约定。通用约定见 `common/coding-style.md`。
 - [禁止]  捕获通用异常（`Exception`）
 - [禁止]  空 `catch` 块
 
+## 测试方法命名
+
+- [必须]  采用 `should_{预期结果}_when_{被测方法}_given_{给定场景}` 格式
+- [必须]  命名使用英文，语义清晰，描述测试意图、触发条件和输入条件
+- [推荐]  示例：`should_returnFalse_when_deleteContent_given_invokeFailed`
+- [推荐]  示例：`should_clearIdentifierError_when_handleIntent_given_validUsername`
+
 ## 禁止行为
 
 - [禁止]  使用原始类型（`List` 而非 `List<String>`）

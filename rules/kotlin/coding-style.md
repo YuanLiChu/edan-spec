@@ -39,6 +39,13 @@ Kotlin 特定的编码约定。通用约定见 `common/coding-style.md`。
 - [禁止]  捕获 `CancellationException`（必须重新抛出）
 - [禁止]  用 `try-catch` 进行控制流
 
+## 测试方法命名
+
+- [必须]  采用 `should_{预期结果}_when_{被测方法}_given_{给定场景}` 格式
+- [必须]  命名使用英文，语义清晰，描述测试意图、触发条件和输入条件
+- [推荐]  示例：`should_returnFalse_when_deleteContent_given_invokeFailed`
+- [推荐]  示例：`should_clearIdentifierError_when_handleIntent_given_validUsername`
+
 ## 禁止行为
 
 - [禁止]  深度嵌套作用域函数（最多 2 层）
