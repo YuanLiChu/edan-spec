@@ -19,10 +19,10 @@ description: 建立/更新项目知识地图——扫描工程项目结构，生
 
 ## 目录结构
 
-本 skill 在 `.edan-dev/context/` 下生成持久性知识文档：
+本 skill 在 `EdanSpec/context/` 下生成持久性知识文档：
 
 ```
-.edan-dev/
+EdanSpec/
 ├── context/                          # 项目持久知识
 │   ├── project.md                    # 项目级知识地图
 │   └── modules/                      # 模块级知识
@@ -59,7 +59,7 @@ Step 3: 生成 flow.md（业务流级，逐流）
 
 ## Step 0: 前置检测
 
-启动时检测 `.edan-dev/context/` 是否存在：
+启动时检测 `EdanSpec/context/` 是否存在：
 
 | 检测结果 | 行为 |
 |----------|------|
@@ -89,7 +89,7 @@ Step 3: 生成 flow.md（业务流级，逐流）
 
 **询问话术：**
 
-> 检测到 `.edan-dev/context/` 已存在。请选择：
+> 检测到 `EdanSpec/context/` 已存在。请选择：
 > - **更新** — 基于现有文档补充新增模块/业务流
 > - **重建** — 删除现有文档，重新扫描整个项目
 > - **添加模块** — 只扫描指定模块，追加到现有 context
@@ -129,7 +129,7 @@ find . -maxdepth 2 -type d | grep -v node_modules | grep -v .git | sort
 
 ### 1.3 生成 project.md
 
-写入 `.edan-dev/context/project.md`，参考模板文件：
+写入 `EdanSpec/context/project.md`，参考模板文件：
 
 > **模板**：[`references/project-template.md`](references/project-template.md)
 >
@@ -186,7 +186,7 @@ grep -r "class .*Service\|interface .*Repository\|class .*Controller" {module-pa
 
 ### 2.3 生成 module.md
 
-写入 `.edan-dev/context/modules/{module-name}/module.md`，参考模板文件：
+写入 `EdanSpec/context/modules/{module-name}/module.md`，参考模板文件：
 
 > **模板**：[`references/module-template.md`](references/module-template.md)
 >
@@ -240,7 +240,7 @@ grep -r "suggestThreshold\|AlarmSuggestService" {module-path} --include="*.kt" -
 
 ### 3.3 生成 flow.md
 
-写入 `.edan-dev/context/modules/{module-name}/flows/{flow-name}.md`，参考模板文件：
+写入 `EdanSpec/context/modules/{module-name}/flows/{flow-name}.md`，参考模板文件：
 
 > **模板**：[`references/flow-template.md`](references/flow-template.md)
 >
@@ -268,9 +268,9 @@ grep -r "suggestThreshold\|AlarmSuggestService" {module-path} --include="*.kt" -
 ```markdown
 已建立项目知识地图：
 
-- `.edan-dev/context/project.md` — 项目级（N 个模块）
-- `.edan-dev/context/modules/{module}/module.md` — 模块级（共 M 个）
-- `.edan-dev/context/modules/{module}/flows/{flow}.md` — 业务流级（共 K 个）
+- `EdanSpec/context/project.md` — 项目级（N 个模块）
+- `EdanSpec/context/modules/{module}/module.md` — 模块级（共 M 个）
+- `EdanSpec/context/modules/{module}/flows/{flow}.md` — 业务流级（共 K 个）
 
 后续任何 feature 工作流均可读取 `context/` 作为项目背景知识。
 ```
@@ -356,7 +356,7 @@ grep -r "suggestThreshold\|AlarmSuggestService" {module-path} --include="*.kt" -
 ## 警示信号
 
 - 未检测 `context/` 是否存在就直接生成
-- 把知识文档放在 `.edan-dev/feature/` 下（与变更工单混淆）
+- 把知识文档放在 `EdanSpec/feature/` 下（与变更工单混淆）
 - 一次性扫描所有模块并批量生成（上下文膨胀）
 - 类图包含过多类（>10 个）或工具类
 - 模块内时序图跨越模块边界（应移至 module.md 的「跨模块场景」中）

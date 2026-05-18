@@ -1,6 +1,6 @@
 # 安全速查清单
 
-应用安全的速查清单。与 `edan-dev:security-review` skill 配合使用。
+应用安全的速查清单。与 `edanspec:security-review` skill 配合使用。
 
 ## 目录
 

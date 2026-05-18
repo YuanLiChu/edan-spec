@@ -1,5 +1,5 @@
 ---
-name: security-review
+name: edanspec:security-review
 description: 合入前安全审查——输入验证、认证/授权、数据保护、机密管理、依赖漏洞。触发场景：涉及用户输入、认证/授权、数据存储、外部集成、文件上传的代码变更，用户要求「安全检查」「审查安全性」「安全漏洞」「跨站脚本」「SQL 注入」。不适用于纯 UI 样式调整或文档变更。
 ---
 
@@ -45,9 +45,22 @@ description: 合入前安全审查——输入验证、认证/授权、数据保
 
 **有 CRITICAL → 不批准合并。**
 
-## 常见借口
+## 状态更新
 
-> 通用借口见 `AGENT.md`。
+如果在 feature 目录下（`status.json` 存在），审查完成后更新 `reviewGate`：
+```json
+{ "reviewGate": { "securityReview": { "status": "passed" 或 "failed", "lastRun": "...", "hasCritical": true/false, "findings": { "critical": N, "important": N, "suggestion": N } } } }
+```
+- 有 CRITICAL → `status: "failed"`, `hasCritical: true`
+- 无 CRITICAL → `status: "passed"`, `hasCritical: false`
+
+**`findings` 记录各严重度问题的数量**，便于后续关卡和 archive 了解审查质量。
+
+如果不在 feature 目录下（无 `status.json`），只输出报告，不更新状态。
+
+## 常见误区与反驳
+
+> 通用误区见 `AGENT.md`。
 
 | 说辞 | 真相 |
 |------|------|
