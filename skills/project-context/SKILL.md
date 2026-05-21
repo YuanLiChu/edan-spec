@@ -316,7 +316,7 @@ grep -r "suggestThreshold\|AlarmSuggestService" {module-path} --include="*.kt" -
 ## 与现有工作流的关系
 
 ```
-[项目首次接入 edan-dev]
+[项目首次接入 edan-spec]
          │
          ▼
   project-context  ← 本 skill

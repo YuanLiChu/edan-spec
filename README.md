@@ -9,11 +9,11 @@
 - **增量开发** — 每个增量独立完成一条验收标准，原子提交
 - **一个变更 = 一个目录** — 用 feature 目录聚合所有产物，从文件恢复上下文，不依赖会话记忆
 
-## 目录结构
+## Agent目录结构
 
 ```
 ├── AGENT.md                     # Agent 基础规范（核心铁律 + 上下文管理 + 变更工单）
-├── CLAUDE.md                    # 项目入口文件（指向 AGENT.md）
+├── CLAUDE.md                    # CLAUDE规范文件（指向 AGENT.md）
 ├── README.md                    # 项目概览
 ├── agents/                      # 专家 Agent 定义
 │   ├── code-reviewer.md         # 代码审查专家（四维度评估）
@@ -25,30 +25,20 @@
 │   ├── common/                  # 通用编码风格（所有语言适用）
 │   ├── java/                    # Java 编码风格
 │   └── kotlin/                  # Kotlin 编码风格
-├── skills/                      # 技能集合
-│   ├── project-context/         # 项目上下文初始化（扫描项目 → 生成知识地图）
-│   ├── explore/                 # 探索模式（需求澄清 + 方案比较）
-│   ├── create-spec/             # 创建 feature 目录 + 生成 proposal/spec/design
-│   ├── design-review/           # 复杂功能的正式评审（八章方案 + 八章详细设计）
-│   ├── task-plan/               # 任务规划（拆分为可执行任务清单）
-│   ├── task-implement/          # 任务实现（TDD 循环 + 原子提交）
-│   ├── debugging/               # 调试排障（五步流程）
-│   ├── code-review/             # 代码审查（四维度评估）
-│   ├── security-review/         # 安全审查（五维度检查）
-│   ├── verify/                  # 结构化验证（三维度验收）
-│   └── archive/                 # 归档（delta spec 合并 + 文件移动）
-└── EdanSpec/                    # 运行时目录（生成产物）
-    ├── context/                 # 项目知识地图（运行时生成，持久维护）
-    │   ├── project.md           # 项目级上下文
-    │   └── modules/             # 模块级设计文档
-    │       └── {module-name}/
-    │           ├── module.md    # 模块设计（职责边界、类图、时序图）
-    │           └── flows/
-    │               └── {flow-name}.md  # 业务流设计（输入输出、调用序列）
-    ├── feature/                 # 变更工单目录（运行时生成）
-    ├── archive/                 # 归档目录（完成后移动）
-    └── specs/                   # 主 spec 存储（delta spec 合并后归档于此）
+└── skills/                      # 技能集合
+    ├── project-context/         # 项目上下文初始化（扫描项目 → 生成知识地图）
+    ├── explore/                 # 探索模式（需求澄清 + 方案比较）
+    ├── create-spec/             # 创建规格（feature 目录 + proposal / spec / design）
+    ├── design-review/           # 设计评审（八章方案 + 八章详细设计）
+    ├── task-plan/               # 任务规划（拆分为可执行任务清单）
+    ├── task-implement/          # 任务实现（TDD 循环 + 原子提交）
+    ├── debugging/               # 调试排障（五步流程）
+    ├── code-review/             # 代码审查（四维度评估）
+    ├── security-review/         # 安全审查（五维度检查）
+    ├── verify/                  # 结构化验证（三维度验收）
+    └── archive/                 # 归档（delta spec 合并 + 文件移动）
 ```
+
 
 ## 工作流
 
@@ -94,6 +84,125 @@ flowchart LR
 3. `task-implement` 完成后 → 三个审查关卡全部通过才继续归档
 4. 同一问题反复修复失败 → 第 1-2 次正常修复；第 3 次停下来重新定位根因（调 `debugging`）；第 4 次回到 `explore` 重新审视方案；第 5 次停止并报告
 
+## 使用说明
+
+> **前置条件**：本项目以 [Claude Code CLI](https://claude.ai/code) 为默认 Agent 工具。以下示例均以 Claude Code 为例，其他支持 MCP/Skill/SubAgent 协议的 Agent 工具可类比操作。
+
+### 快速开始
+
+#### 1. 进入项目目录
+
+```bash
+cd /path/to/your/project
+```
+
+#### 2. 初始化 Agent 工程
+
+在项目中创建 `.claude/` 目录并导入 EdanSpec 的全部资源：
+
+```bash
+# 创建 .claude 目录
+mkdir -p .claude
+
+# 拷贝 EdanSpec 资源（skills、agents、rules、AGENT.md、CLAUDE.md 等）
+cp -r /path/to/edan-spec/skills .claude/
+cp -r /path/to/edan-spec/agents .claude/
+cp -r /path/to/edan-spec/rules   .claude/
+cp    /path/to/edan-spec/AGENT.md   .claude/
+cp    /path/to/edan-spec/CLAUDE.md  .claude/
+```
+
+启动 Claude Code，验证资源是否正确加载：
+
+```bash
+claude                        # 进入交互式会话
+# 在会话中输入：
+/skills                       # 检查 skills 列表，应看到 edanspec: 前缀的 11 个技能
+```
+
+#### 3. 初始化项目规范
+
+**首次接入新项目**时，生成项目根目录下的 `CLAUDE.md`：
+
+```bash
+claude                        # 启动 Claude Code
+/init                         # 生成项目根目录下的 CLAUDE.md（注意：区别于 .claude/CLAUDE.md）
+```
+
+如果是**非空项目**（已有代码），继续执行 `project-context` 生成知识地图：
+
+```bash
+/skill project-context        # 扫描项目结构，生成 EdanSpec/context/ 知识地图
+```
+
+生成完成后，在项目级 `CLAUDE.md` 中添加对知识地图的引用：
+
+```markdown
+<!-- CLAUDE.md 中追加 -->
+- 项目知识地图：[EdanSpec/context/project.md](EdanSpec/context/project.md)
+```
+
+---
+
+### 典型工作流
+
+#### 场景一：新项目接入
+
+```
+/skill project-context          →  扫描项目，生成 context/ 知识地图
+```
+
+**预期输出**：`EdanSpec/context/project.md` + `EdanSpec/context/modules/` 下的模块文档。
+
+#### 场景二：开发新功能（需求模糊）
+
+```
+/edanspec:explore               →  澄清需求，比较方案
+/edanspec:create-spec           →  创建 feature 目录，生成 proposal + spec + design
+/edanspec:task-plan             →  拆分任务清单（tasks.md）
+/edanspec:task-implement        →  TDD 循环实现，原子提交
+/edanspec:code-review           →  四维度代码审查
+/edanspec:security-review       →  五维度安全检查
+/edanspec:verify                →  三维度验收
+/edanspec:archive               →  归档变更
+```
+
+#### 场景三：开发新功能（需求明确）
+
+跳过 `explore`，直接进入规格创建：
+
+```
+/edanspec:create-spec           →  创建 feature 目录，生成 proposal + spec + design
+/edanspec:task-plan             →  拆分任务清单
+...（同场景二后续步骤）
+```
+
+#### 场景四：继续上次未完成的工作
+
+```
+/edanspec:task-implement        →  自动检测 EdanSpec/feature/ 下的活跃变更，恢复上下文
+```
+
+Agent 会扫描 `EdanSpec/feature/` 目录，找到 `tasks.md` 中未勾选的任务，从断点继续。
+
+#### 场景五：修复 Bug
+
+```
+# 直接描述问题，Agent 自动匹配 debugging 技能
+"登录接口偶尔返回 500，帮我排查"
+                                →  观察→复现→定位→修复→验证（五步排障）
+```
+
+#### 场景六：提交前审查
+
+```
+/edanspec:code-review           →  正确性、可读性、架构、性能
+/edanspec:security-review       →  输入验证、认证授权、数据保护、机密管理、依赖安全
+/edanspec:verify                →  完整性、正确性、一致性验收
+```
+
+---
+
 ### 各阶段说明
 
 | 阶段 | Skill | 做什么 |
@@ -109,6 +218,33 @@ flowchart LR
 | **安全审查** | `security-review` | 五维度检查：输入验证、认证/授权、数据保护、机密管理、依赖安全 |
 | **结构化验证** | `verify` | 三维度验收：完整性、正确性、一致性，归档前最终关卡 |
 | **归档** | `archive` | delta spec 合并到主规范，feature 移至归档目录 |
+
+---
+
+### EdanSpec 运行项目目录结构
+
+```
+EdanSpec/                        # 运行时根目录（由 skill 自动创建）
+├── context/                     # 项目知识地图（持久维护）
+│   ├── project.md               # 项目级上下文
+│   ├── references/              # 模板引用（由 project-context 生成）
+│   └── modules/                 # 模块级设计文档
+│       └── {module-name}/
+│           ├── module.md        # 模块设计（职责边界、类图、时序图）
+│           └── flows/
+│               └── {flow-name}.md  # 业务流设计（输入输出、调用序列）
+├── feature/                     # 变更工单目录（进行中）
+│   └── {timestamp}-{topic}/
+│       ├── proposal.md          # 变更提案
+│       ├── spec.md              # 需求规格
+│       ├── design.md            # 设计文档
+│       ├── tasks.md             # 任务清单（唯一进度来源）
+│       └── ...                  # 其他过程产物
+├── specs/                       # 主 spec 存储（delta spec 合并后归档于此）
+└── archive/                     # 归档目录（完成后从 feature 移入）
+```
+
+---
 
 ## Agent 核心铁律
 
