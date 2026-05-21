@@ -48,20 +48,22 @@ description: 合并前四维度审查（正确性、可读性、架构、性能�
 
 **有 CRITICAL → 不批准合并。**
 
-## 状态更新
+## 报告持久化
 
-如果在 feature 目录下（`status.json` 存在），审查完成后更新 `reviewGate`：
-```json
-{ "reviewGate": { "codeReview": { "status": "passed" 或 "failed", "lastRun": "...", "hasCritical": true/false, "findings": { "critical": N, "important": N, "suggestion": N } } } }
-```
-- 有 CRITICAL → `status: "failed"`, `hasCritical: true`
-- 无 CRITICAL → `status: "passed"`, `hasCritical: false`
+审查完成后，**必须将报告写入文件**，以便 task-implement 步骤六基于事实检查。
 
-**`findings` 记录各严重度问题的数量**，便于后续关卡和 archive 了解审查质量。
+| 条件 | 操作 |
+|------|------|
+| 在 feature 目录下（存在 `EdanSpec/feature/` 路径） | 将报告写入 `{feature-dir}/code-review-report.md`，并输出报告到控制台 |
+| 不在 feature 目录下 | 仅输出报告到控制台，不写文件 |
 
-如果不在 feature 目录下（无 `status.json`），只输出报告，不更新状态。
+**判定规则：**
+- 有 CRITICAL → 报告结论为 `REQUEST_CHANGES`，`code-review-report.md` 中 CRITICAL 数量 > 0
+- 无 CRITICAL → 报告结论为 `APPROVE`，`code-review-report.md` 中 CRITICAL 数量为 0
 
-## 常见借口
+**报告文件路径**：`{feature-dir}/code-review-report.md`。task-implement 恢复时通过读取此文件判断是否已通过。
+
+## 常见误区与反驳
 
 > 通用借口见 `AGENT.md`。
 

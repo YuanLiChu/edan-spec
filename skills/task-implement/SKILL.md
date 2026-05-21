@@ -3,6 +3,8 @@ name: edanspec:task-implement
 description: 依据任务文档执行代码实现。增量式开发 + 测试驱动（TDD），每个增量独立验证后原子提交。触发场景：用户要求开始实现功能或修复 bug、按任务计划执行、继续上次工作。不适用于纯配置变更、文档更新、简单重命名。
 ---
 
+<!-- SCRIPTS: .claude/skills/task-implement/scripts/ — 正文中统一用 {{SCRIPTS}} 引用 -->
+
 # 任务实现
 
 把任务变成代码。核心原则：**增量开发 + TDD + 原子提交**。
@@ -10,7 +12,7 @@ description: 依据任务文档执行代码实现。增量式开发 + 测试驱�
 > 概念：**任务**是 plan 阶段的规划单元，**增量**是 implement 阶段的执行单元。一个任务包含一个或多个增量，每个增量独立完成一条验收标准。
 
 ```
-恢复（从 status.json taskGraph 状态驱动）
+恢复（从 tasks.md 事实驱动，脚本计算状态）
   ↓
 加载（读 tasks.md → 检查依赖 → 判定串行/并行）
   ↓
@@ -18,41 +20,16 @@ description: 依据任务文档执行代码实现。增量式开发 + 测试驱�
   ↓
 执行（串行 TDD 循环 或 并行 SubAgent + worktree）
   ↓
-提交 + 更新（原子提交 → checkbox → status.json taskGraph）
+提交 + 更新（原子提交 → checkbox）
   ↓
 审查关卡（code-review、security-review、verify，全部必须通过）
 ```
 
 ## 状态模型
 
-`status.json` 中的 `taskGraph` 定义每个任务的生命周期：
+> `{{SCRIPTS}}` 引用自文件顶部 SCRIPTS 锚点。
 
-```json
-{
-  "taskGraph": [
-    {
-      "id": "Task-001",
-      "title": "用户登录功能",
-      "status": "done",
-      "dependsOn": [],
-      "files": ["src/auth/login.ts", "tests/auth/login.spec.ts"],
-      "currentIncrement": 3,
-      "totalIncrements": 3,
-      "lastModified": "2026-05-12T10:00:00"
-    },
-    {
-      "id": "Task-002",
-      "title": "用户注册功能",
-      "status": "in_progress",
-      "dependsOn": ["Task-001"],
-      "files": ["src/auth/register.ts", "tests/auth/register.spec.ts"],
-      "currentIncrement": 1,
-      "totalIncrements": 3,
-      "lastModified": "2026-05-12T10:30:00"
-    }
-  ]
-}
-```
+任务状态以 `tasks.md` checkbox 为唯一事实来源。优先运行 `{{SCRIPTS}}/derive-task-status.py` 推导，不缓存。脚本不存在时，直接从 tasks.md 手工推导。
 
 **状态流转：**
 
@@ -74,33 +51,29 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 
 有活跃 feature 时自动执行，从状态驱动恢复，不依赖会话记忆。
 
-**检测流程**：`EdanSpec/feature/` 下有活跃工单 → 读 `status.json` + `tasks.md` → 从 taskGraph 中第一个 `status != "done"` 的任务恢复；无活跃工单 → 继续步骤二。
+**检测流程**：`EdanSpec/feature/` 下有活跃工单 → 运行 `{{SCRIPTS}}/derive-task-status.py` 获取 taskGraph 事实状态，脚本不存在则直接解析 tasks.md → 从第一个 `status != "done"` 的任务恢复；无活跃工单 → 继续步骤二。
 
 **恢复操作**：
 1. `find EdanSpec/feature/ -maxdepth 1 -mindepth 1 -type d | sort` 定位工单
-2. 读 `status.json`，**重新计算每个任务的 status**（基于 tasks.md checkbox + 依赖关系）
+2. 运行 `{{SCRIPTS}}/derive-task-status.py <feature-dir>` 获取状态（脚本不存在时，手工解析 tasks.md checkbox 推导：全 `[x]` → `done`，部分 `[x]` → `in_progress`，无 `[x]` 且依赖满足 → `ready`，依赖未满足 → `pending`）
 3. 从 taskGraph 中找出第一个 `status != "done"` 的任务 → 断点
-4. 如果全部 done → 检查 reviewGate，见步骤六
-5. 如果 taskGraph 为空或与 tasks.md 不一致 → 从 tasks.md 重新生成 taskGraph
+4. 如果全部 done → 运行 `{{SCRIPTS}}/derive-review-status.py` 检查审查状态，见步骤六
+5. 如果 tasks.md 无任务 → 确认是否需要调用 task-plan
 6. `git log --oneline -10` + `git status` 确认分支和提交状态
 7. 跑一次测试确认代码正常
 
 | 场景 | 操作 |
 |------|------|
-| taskGraph 全部 done，reviewGate 全部 passed | 引导进入 archive |
-| taskGraph 全部 done，reviewGate 有 pending/failed | 从 reviewGate 第一个 pending 关卡继续（步骤六） |
+| taskGraph 全部 done，审查关卡全部 passed | 引导进入 archive |
+| taskGraph 全部 done，审查关卡有 pending/failed | 从审查关卡第一个 pending/failed 关卡继续（步骤六） |
 | 部分任务 in_progress | 从该任务的 currentIncrement 继续 |
 | 有 ready 但未开始 | 从第一个 ready 任务开始 |
-| taskGraph 为空/缺失 | 从 tasks.md 重新生成 taskGraph |
+| tasks.md 无任务/缺失 | 无任务可执行，确认是否需要调用 task-plan |
 | 测试失败 | 调 `edanspec:debugging` 排障 |
 
-> **reviewGate 缺失处理**：如果 `status.json` 中不存在 `reviewGate` 字段（例如跳过了 create-spec 直接调用 task-implement），在步骤六开始前先初始化 reviewGate 为全 pending 状态，参见 create-spec/SKILL.md 中的初始化格式。
+**taskGraph 事实来源**：taskGraph 通过脚本从 `tasks.md` 实时计算，不持久化到任何文件。优先运行 `{{SCRIPTS}}/derive-task-status.py`，脚本不存在时手工解析 tasks.md checkbox 推导。
 
-**从 tasks.md 重新生成 taskGraph 的规则：**
-1. 解析 tasks.md 中所有任务的 ID、标题、依赖关系、涉及文件
-2. 解析每个任务的增量 checkbox：全 `[x]` → `done`，部分 `[x]` → `in_progress`，无 `[x]` 且依赖满足 → `ready`，依赖未满足 → `pending`
-3. 估算每个任务的增量数（tasks.md 中增量计划的条目数 = 增量数）
-4. 写入 status.json
+**审查状态事实来源**：通过 `{{SCRIPTS}}/derive-review-status.py` 从报告文件实时解析。报告文件不存在即视为 pending。
 
 **警示信号**：不检查 git 状态就继续、checkbox 与 git 提交不一致却不修正、taskGraph 与 tasks.md 不一致时不重新计算。
 
@@ -117,7 +90,7 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 | 依赖类型 | 检查方法 |
 |---------|---------|
 | 同 feature 内 | 对应 checkbox 为 `[x]` |
-| 跨 feature | 目标 feature `status.json.state` 为 `archived` 或对应 checkbox 已勾选 |
+| 跨 feature | 运行 `{{SCRIPTS}}/derive-task-status.py`（不存在则手工解析）确认目标 feature 所有任务为 `done` |
 
 ### 并行判定
 
@@ -240,18 +213,9 @@ Co-Authored-By: Claude
 | 操作 | 时机 |
 |------|------|
 | 增量验证通过 → 对应增量改为 `[x]` | 增量验证通过后 |
-| 更新 taskGraph 中对应任务：`currentIncrement++`、`lastModified` | 每个增量完成后 |
-| 重新计算 taskGraph 所有任务 status | 每次提交后 |
-| 任务完成（所有增量 `[x]`）→ taskGraph status 改为 `done` | 任务所有增量完成后 |
+| 提交后运行脚本重算 taskGraph | 每次提交后 |
 
-**taskGraph 重新计算规则：**
-1. 遍历每个任务，检查 tasks.md 中该任务的所有增量 checkbox
-2. 全部 `[x]` → status = `done`
-3. 部分 `[x]` → status = `in_progress`
-4. 无 `[x]` 但依赖全 done → status = `ready`
-5. 依赖未满足 → status = `pending`
-6. 更新 `currentIncrement` = 已完成的增量数量
-7. 更新 `totalIncrements` = 总增量数量
+**taskGraph 重新计算**：每次提交后运行 `{{SCRIPTS}}/derive-task-status.py`（脚本不存在时手工解析 tasks.md checkbox）获取最新状态。
 
 ### 执行循环
 
@@ -272,65 +236,66 @@ tasks.md 中所有任务完成后，**必须通过三个审查关卡**，全部�
 ```
 tasks.md 全部 done
   ↓
-基于 reviewGate 状态选择下一个 pending 关卡执行
-  ├─ code-review（代码审查，四维度）
-  ├─ security-review（安全审查，五维度）
-  └─ verify（三维度验证）
+运行 {{SCRIPTS}}/derive-review-status.py 基于报告文件事实检查
   ↓
-全部 status = "passed" 且 hasCritical 全 false → 实现完成，引导归档
+基于报告文件状态选择下一个 pending/failed 关卡执行
+  ├─ code-review（代码审查，四维度）→ 写入 code-review-report.md
+  ├─ security-review（安全审查，五维度）→ 写入 security-review-report.md
+  └─ verify（三维度验证）→ 写入 verify-report.md
+  ↓
+allPassed = true → 实现完成，引导归档
 ```
 
-三个关卡**推荐按 code-review → security-review → verify 顺序执行**，恢复时从任意 pending 关卡继续，已通过的直接跳过。
+三个关卡**推荐按 code-review → security-review → verify 顺序执行**，恢复时从任意 pending/failed 关卡继续，已通过的直接跳过。
 
 ### 6.1 恢复断点
 
-从 `status.json` 的 `reviewGate` 字段恢复：
+**审查状态以报告文件为事实来源。** 优先运行 `{{SCRIPTS}}/derive-review-status.py` 推导，脚本不存在时手工检查 feature 目录下是否存在 `code-review-report.md`、`security-review-report.md`、`verify-report.md` 文件并解析内容。
 
-```json
-"reviewGate": {
-  "codeReview":     { "status": "passed", "lastRun": "...", "hasCritical": false, "findings": { "critical": 0, "important": 2, "suggestion": 5 } },
-  "securityReview": { "status": "pending", "lastRun": null, "hasCritical": false, "findings": { "critical": 0, "important": 0, "suggestion": 0 } },
-  "verify":         { "status": "pending", "lastRun": null, "hasCritical": false, "findings": { "critical": 0, "important": 0, "suggestion": 0 } }
-}
+```bash
+# 获取当前 feature 的审查状态
+python {{SCRIPTS}}/derive-review-status.py EdanSpec/feature/<name>
 ```
 
-| reviewGate 状态 | 操作 |
-|----------------|------|
-| 全部 passed 且 hasCritical 全 false | 引导进入 archive |
-| 任一 hasCritical=true | 自动修复该关卡所有 CRITICAL 问题，修复后重新执行该关卡 |
-| 有 pending 关卡 | 执行第一个 pending 关卡（按 code-review → security-review → verify 顺序） |
-| 有 passed 关卡 | **直接跳过**，不重复执行。即使 code-review 中已引导过 security-review，仍以 reviewGate 状态为准 |
+**脚本输出结构：** `{"feature": "<name>", "reviewStatus": { ... }, "allPassed": true/false}`。
 
-> **关于重复审查**：code-review 可能识别到安全问题并引导用户单独执行 `edanspec:security-review`。此时 reviewGate.securityReview 可能已是 `passed`。步骤六不再重复执行，直接跳过已通过的关卡。
+| 审查状态 | 操作 |
+|---------|------|
+| `allPassed = true` | 引导进入 archive |
+| 任一关卡 `hasCritical = true` | 自动修复该关卡所有 CRITICAL 问题，修复后删除对应报告文件，重新执行该关卡 |
+| 有 pending 关卡 | 执行第一个 pending 关卡（按 code-review → security-review → verify 顺序） |
+| 有 passed 关卡 | **直接跳过**，不重复执行。即使 code-review 中已引导过 security-review，仍以报告文件状态为准 |
+
+> **关于重复审查**：code-review 可能识别到安全问题并引导用户单独执行 `edanspec:security-review`。此时 security-review-report.md 可能已存在且状态为 passed。步骤六不再重复执行，直接跳过已通过的关卡。
 
 ### 6.2 执行 code-review
 
-调用 `edanspec:code-review` 对当前 feature 的代码变更进行四维度审查。
+调用 `edanspec:code-review` 对当前 feature 的代码变更进行四维度审查。审查完成后报告必须写入 `{feature-dir}/code-review-report.md`。
 
-- **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后重新执行 code-review
-- **无 CRITICAL** → 更新 `reviewGate.codeReview.status = "passed"`、`lastRun` 记录时间、`hasCritical = false`、`findings` 记录各严重度数量，继续下一阶段
+- **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后删除 `code-review-report.md`，重新执行 code-review
+- **无 CRITICAL** → 报告写入 `code-review-report.md`，继续下一阶段
 
 ### 6.3 执行 security-review
 
-调用 `edanspec:security-review` 对当前 feature 的代码变更进行五维度安全审查。
+调用 `edanspec:security-review` 对当前 feature 的代码变更进行五维度安全审查。审查完成后报告必须写入 `{feature-dir}/security-review-report.md`。
 
-- **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后重新执行 security-review
-- **无 CRITICAL** → 更新 `reviewGate.securityReview.status = "passed"`、`lastRun` 记录时间、`hasCritical = false`、`findings` 记录各严重度数量，继续下一阶段
+- **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后删除 `security-review-report.md`，重新执行 security-review
+- **无 CRITICAL** → 报告写入 `security-review-report.md`，继续下一阶段
 
 ### 6.4 执行 verify
 
-调用 `edanspec:verify` 对当前 feature 执行三维度验证。
+调用 `edanspec:verify` 对当前 feature 执行三维度验证。验证完成后报告必须写入 `{feature-dir}/verify-report.md`。
 
-- **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后重新执行 verify
-- **无 CRITICAL** → 更新 `reviewGate.verify.status = "passed"`、`lastRun` 记录时间、`hasCritical = false`、`findings` 记录各严重度数量，实现完成
+- **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后删除 `verify-report.md`，重新执行 verify
+- **无 CRITICAL** → 报告写入 `verify-report.md`，实现完成
 
 ### 6.5 审查完成判定
 
-三个关卡全部 `status = "passed"` 且 `hasCritical = false` → 更新 `status.json`：`state = "completed"`，然后引导用户归档：
+运行 `{{SCRIPTS}}/derive-review-status.py` 确认 `allPassed = true` → 更新 `status.json`：`state = "completed"`，然后引导用户归档：
 
 > "实现完成，全部审查通过。要现在归档这个 feature 吗？（`edanspec:archive`）"
 
-**任一关卡未执行或未通过 → 不算实现完成。** 恢复时从 reviewGate 的 pending 关卡继续。
+**任一关卡未执行或未通过 → 不算实现完成。** 恢复时从报告文件推导的 pending/failed 关卡继续。
 
 ---
 
@@ -346,7 +311,7 @@ tasks.md 全部 done
 | 5 — 可回滚 | 每个增量可独立回退 |
 | 6 — 验证必执行 | 每个增量必须通过自动化验证，不可跳过 |
 | 7 — 并行有界 | 仅无文件重叠且无依赖时并行，合并后统一验证 |
-| 8 — 及时更新 | 任务完成后立即更新 checkbox 和 status.json |
+| 8 — 及时更新 | 任务完成后立即更新 tasks.md checkbox，运行脚本重算 taskGraph |
 | 9 — 覆盖率必检 | 每个增量完成后必须运行覆盖率工具检测并记录数值，不得推算 |
 | 10 — 审查必过 | 全部任务完成后必须通过 code-review、security-review、verify，缺一不算完成 |
 
@@ -368,13 +333,13 @@ tasks.md 全部 done
 - 跳过测试/验证
 - **跳过覆盖率检查或凭感觉判断**（必须运行工具检测）
 - 修改任务范围之外的文件
-- 只更新增量 checkbox，遗漏 taskGraph 状态更新
-- 任务完成不及时更新 taskGraph，恢复时状态不一致
-- taskGraph 与 tasks.md checkbox 不一致时不重新计算
+- 只更新增量 checkbox，未运行脚本重算 taskGraph
+- 任务完成不及时运行脚本重算 taskGraph，恢复时状态不一致
+- taskGraph 与 tasks.md checkbox 不一致时不重新运行脚本
 - 并行条件不满足时强行并行（项目骨架未完成、文件有交集）
 - 覆盖率报告未记录实际数值就提交
-- **跳过审查关卡直接归档**（三个关卡必须全部通过，但以 reviewGate 状态为准，已通过的不重复执行）
-- reviewGate 显示有 CRITICAL 时未修复就进入下一阶段
+- **跳过审查关卡直接归档**（三个关卡必须全部通过，以报告文件状态为准，已通过的不重复执行）
+- 报告文件显示有 CRITICAL 时未修复就进入下一阶段
 
 ## 验证与引导
 

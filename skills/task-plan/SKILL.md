@@ -130,20 +130,11 @@ description: 任务规划。将需求/设计分解为可执行的任务文档（
 
 输出到 `EdanSpec/feature/<name>/tasks.md`。
 
-**生成后更新 `status.json`**（如不存在则创建）：
-
-在 `artifactGraph` 中追加 tasks 条目：
-```json
-{ "id": "tasks", "file": "tasks.md", "status": "done", "dependsOn": ["proposal", "specs", "design"], "lastModified": "YYYY-MM-DDTHH:mm:ss" }
-```
-
-仅记录产物产出状态，不操作 `taskGraph`（实现进度由 task-implement 在恢复阶段从 tasks.md 推导初始化）。
-
 **并行组注释**：若存在可并行任务，在对应阶段标题前插入 `<!-- PARALLEL: Task-XXX, Task-YYY -->` 注释，供 task-implement 解析。
 
 ---
 
-## 常见误区
+## 常见误区与反驳
 
 | 说辞 | 真相 |
 |------|------|
@@ -155,7 +146,7 @@ description: 任务规划。将需求/设计分解为可执行的任务文档（
 
 任务无验收标准或标准不可测试、涉及超 3 个文件但未拆分、所有任务都是 L/XL、无检查点或检查点无可验证条件、任务标题含"和"、实施顺序未标注并行依据。
 
-## 验证清单
+## 验证
 
 > 注意：验证清单是完成后的自检列表，与验收标准（任务的定义性描述）不同。
 

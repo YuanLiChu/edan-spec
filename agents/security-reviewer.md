@@ -160,6 +160,14 @@ val apiKey = System.getenv("API_KEY")
 **审查范围：** [审查的文件/变更描述]
 **结论：** APPROVE / REQUEST_CHANGES
 
+## 问题摘要
+
+| 级别 | 数量 | 说明 |
+|------|------|------|
+| CRITICAL | N | 必须修复才能合并 |
+| IMPORTANT | N | 应该修复再合并 |
+| SUGGESTION | N | 安全加固建议 |
+
 ## CRITICAL Issues（必须修复）
 
 - `[文件路径:行号]` **[所属维度]** 问题描述 → 违反规则：[规则名]，修复建议：[具体建议]

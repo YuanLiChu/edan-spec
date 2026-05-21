@@ -3,6 +3,8 @@ name: edanspec:design-review
 description: 复杂功能的正式评审流程——八章方案文档 + 八章详细设计。触发场景：用户明确说「出方案」「详细设计」「架构评审」「design review」。日常功能用 edanspec:create-spec 即可。前置条件：feature 下已有 proposal + spec + design 产物（由 create-spec 生成）。
 ---
 
+<!-- SCRIPTS: .claude/skills/design-review/scripts/ — 正文中统一用 {{SCRIPTS}} 引用 -->
+
 # 设计评审（复杂评审）
 
 > **日常功能用 `edanspec:create-spec` 就够了。** 本 skill 用于大功能/架构变更的正式评审——产出八章方案文档 + 八章详细设计。
@@ -74,20 +76,20 @@ description: 复杂功能的正式评审流程——八章方案文档 + 八章�
 
 ## 阶段三：Word 导出（可选）
 
-问用户是否要转 docx。pandoc 不渲染 Mermaid，先用 `scripts/generate_mermaid_images.py` 转 PNG。
+问用户是否要转 docx。pandoc 不渲染 Mermaid，先用 `{{SCRIPTS}}/generate_mermaid_images.py` 转 PNG。
 
-> 以下命令中的 `scripts/` 路径相对于本 skill 目录（`skills/design-review/scripts/`），执行时需切换到此目录或使用绝对路径。
+> `{{SCRIPTS}}` 引用自文件顶部 SCRIPTS 锚点。
 
 **优先方案 — pandoc：**
 ```bash
-python3 scripts/generate_mermaid_images.py EdanSpec/feature/<name>/review/solution.md --replace
+python3 {{SCRIPTS}}/generate_mermaid_images.py EdanSpec/feature/<name>/review/solution.md --replace
 pandoc EdanSpec/feature/<name>/review/solution-images.md -o EdanSpec/feature/<name>/review/solution.docx
 ```
 
 **备选方案 — generate_docx.py（pandoc 未安装时）：**
 ```bash
-python3 scripts/generate_mermaid_images.py EdanSpec/feature/<name>/review/solution.md --replace
-python3 scripts/generate_docx.py EdanSpec/feature/<name>/review/solution-images.md EdanSpec/feature/<name>/review/solution.docx
+python3 {{SCRIPTS}}/generate_mermaid_images.py EdanSpec/feature/<name>/review/solution.md --replace
+python3 {{SCRIPTS}}/generate_docx.py EdanSpec/feature/<name>/review/solution-images.md EdanSpec/feature/<name>/review/solution.docx
 ```
 
 > `generate_docx.py` 使用 python-docx 渲染 Markdown（支持标题、粗体、代码块、列表、表格），不依赖 pandoc。
@@ -147,5 +149,5 @@ python3 scripts/generate_docx.py EdanSpec/feature/<name>/review/solution-images.
 - `templates/design-review-template.md` — 方案模板，阶段一读
 - `templates/detail-design-template.md` — 详细模板，阶段二读
 - `references/mermaid-to-image-guide.md` — Mermaid 转图，阶段三读
-- `scripts/generate_mermaid_images.py` — Mermaid 转 PNG 脚本，阶段三用
-- `scripts/generate_docx.py` — Markdown 转 Word 备选脚本，阶段三用（pandoc 未安装时）
+- `{{SCRIPTS}}/generate_mermaid_images.py` — Mermaid 转 PNG 脚本，阶段三用
+- `{{SCRIPTS}}/generate_docx.py` — Markdown 转 Word 备选脚本，阶段三用（pandoc 未安装时）

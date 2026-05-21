@@ -157,7 +157,7 @@ flowchart LR
 - **一个变更 = 一个目录** — 聚合 proposal、specs、design、tasks 等交付物
 - **状态驱动** — 从文件系统恢复上下文，不依赖会话记忆
 - **tasks.md 是唯一进度来源** — checkbox 格式，驱动 implement 技能
-- **status.json 同步** — 每次创建/更新交付物后同步更新 `artifactGraph` 字段
+- **产物状态从文件系统事实推导** — 不写入 status.json，脚本实时计算
 - **完成后归档** — 移至 `EdanSpec/archive/`
 
 详见 [AGENT.md](AGENT.md) 中的变更管理机制。

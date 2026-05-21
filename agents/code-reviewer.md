@@ -118,6 +118,14 @@ tools: ["Read", "Glob", "Grep", "Bash"]
 **审查范围：** [审查的文件/变更描述]
 **结论：** APPROVE / REQUEST_CHANGES
 
+## 问题摘要
+
+| 级别 | 数量 | 说明 |
+|------|------|------|
+| CRITICAL | N | 必须修复才能合并 |
+| IMPORTANT | N | 应该修复再合并 |
+| SUGGESTION | N | 可以考虑 |
+
 ## CRITICAL Issues（必须修复）
 
 - `[文件路径:行号]` **问题描述** → 修复建议

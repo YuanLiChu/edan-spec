@@ -3,6 +3,8 @@ name: edanspec:archive
 description: 归档已完成的 feature——引导验证（可选）、delta spec 合并、移动到归档目录。触发场景：feature 完成准备归档、用户说「归档这个」「看看能归档哪些」「归档」。不适用于未完成或有 CRITICAL 问题的 feature。
 ---
 
+<!-- SCRIPTS: .claude/skills/task-implement/scripts/ — 跨 skill 引用，正文用 {{TASK_SCRIPTS}} 表示 -->
+
 # Feature 归档
 
 把已完成的 feature 安全移入归档目录。**先验证，再合并，最后归档。**
@@ -14,7 +16,7 @@ description: 归档已完成的 feature——引导验证（可选）、delta sp
 
 ```
 确认目标 feature
-  → 检查 reviewGate 状态
+  → 检查审查关卡状态
       ├─ verify = pending          → 引导调用 edanspec:verify，完成后继续
       ├─ codeReview/securityReview = pending/failed → 引导回退 edanspec:task-implement
       ├─ verify = failed           → 拒绝归档，展示报告
@@ -32,14 +34,14 @@ description: 归档已完成的 feature——引导验证（可选）、delta sp
 find EdanSpec/feature/ -maxdepth 1 -mindepth 1 -type d | sort
 ```
 
-读取每个 feature 的 `status.json` 和 `tasks.md` 显示完成状态。
+读取每个 feature 的 `tasks.md` 显示任务完成状态。运行 `{{TASK_SCRIPTS}}/derive-review-status.py` 获取审查状态。
 
 ## 2. 检查关卡状态
 
-读取 `status.json` 中的 `reviewGate` 字段，按以下分支处理：
+运行 `{{TASK_SCRIPTS}}/derive-review-status.py EdanSpec/feature/<name>`（脚本不存在时手工检查 `code-review-report.md`、`security-review-report.md`、`verify-report.md` 是否存在并解析内容），按以下分支处理：
 
-| reviewGate 状态 | 操作 |
-|-----------------|------|
+| 审查状态 | 操作 |
+|---------|------|
 | `verify.status = pending` | 引导用户调用 `edanspec:verify`，等待完成后继续 |
 | `codeReview` 或 `securityReview` 为 pending/failed | 引导用户调用 `edanspec:task-implement` 完成剩余关卡 |
 | `verify.status = failed` 或 `verify.findings.critical > 0` | 拒绝归档，展示报告 |
@@ -85,10 +87,10 @@ EdanSpec/specs/                          EdanSpec/feature/xxx/specs/
 # {Capability} 规格
 
 ### Requirement: 用户登录 [ADDED]
-系统 SHALL 支持用户名密码登录。
+支持用户名密码登录。
 
 ### Requirement: 密码复杂度 [MODIFIED]
-系统 SHALL 要求密码至少 8 位，包含大小写字母和数字。
+密码至少 8 位，包含大小写字母和数字。
 
 ### Requirement: 邮箱验证 [REMOVED]
 
@@ -132,7 +134,7 @@ mv EdanSpec/feature/{name} EdanSpec/archive/
 移动后更新 `status.json`：`state = "archived"`。
 
 归档前最终确认：
-- [ ] reviewGate 三个关卡全部 passed
+- [ ] 三个审查关卡全部 passed（通过 `{{TASK_SCRIPTS}}/derive-review-status.py` 确认）
 - [ ] delta spec 已合并（或无 delta spec）
 - [ ] tasks.md 所有 checkbox 已勾选
 - [ ] 代码已提交
@@ -158,9 +160,9 @@ mv EdanSpec/feature/{name} EdanSpec/archive/
 ## 验证
 
 - [ ] 目标 feature 已确认
-- [ ] reviewGate.verify.status 为 passed
-- [ ] reviewGate 有 pending 时已引导至对应 skill
-- [ ] reviewGate.verify 为 failed 时已拒绝归档
+- [ ] 审查关卡全部 passed（`{{TASK_SCRIPTS}}/derive-review-status.py` 输出 `allPassed = true`）
+- [ ] 审查关卡有 pending/failed 时已引导至对应 skill
+- [ ] verify 为 failed 时已拒绝归档
 - [ ] IMPORTANT findings 已告知用户
 - [ ] delta spec 已合并（或确认无 delta spec）
 - [ ] `EdanSpec/specs/` 存在且 delta 已正确合并

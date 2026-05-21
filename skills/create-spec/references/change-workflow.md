@@ -22,8 +22,6 @@
   2. 重新生成所有 spec 文件（新增、修改、删除后的最终状态）
   3. 重新生成 design.md（与新的 specs 一致）
   ↓
-更新 status.json 中所有 artifact 的 lastModified
-  ↓
 展示变更摘要，用户确认
 ```
 
@@ -40,8 +38,7 @@ Agent 操作：
 3. 重新生成 proposal.md（What Changes 中追加手机号登录）
 4. 重新生成 auth-spec.md（包含密码登录 + 手机号登录，而非标记 ADDED）
 5. 重新生成 design.md（技术决策中包含短信服务选型，与新的 spec 一致）
-6. 更新 status.json 的 lastModified
-7. 展示变更摘要
+6. 展示变更摘要
 ```
 
 ## 关键规则

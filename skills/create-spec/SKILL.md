@@ -3,6 +3,8 @@ name: edanspec:create-spec
 description: 为需求创建或更新方案文档（proposal + spec + design）。**触发场景：** 新功能、"做一个XX"、"加个XX"、"继续上次"、"方案调整"、"需求变了"。**不适用：** 一行修复、拼写错误、纯调研。需求简单也建议用——先花 5 分钟确认范围和验收标准，比写完后发现理解偏差返工几小时划算。
 ---
 
+<!-- SCRIPTS: .claude/skills/create-spec/scripts/ — 正文中统一用 {{SCRIPTS}} 引用 -->
+
 # Create Spec
 
 为需求创建或更新方案文档（proposal + spec + design），一个 feature 目录 = 完整上下文。**先想清楚再动手。**
@@ -11,7 +13,9 @@ description: 为需求创建或更新方案文档（proposal + spec + design）�
 
 启动时自动判断当前场景，不要求用户手动选择。
 
-1. 扫描 `EdanSpec/feature/` 下所有子目录，查找 `state: "active"` 的 feature
+> `{{SCRIPTS}}` 引用自文件顶部 SCRIPTS 锚点。
+
+1. 扫描 `EdanSpec/feature/` 下所有子目录，运行脚本 `{{SCRIPTS}}/derive-artifact-status.py` 获取产物状态
 2. 根据匹配结果分流：
 
 | 检测结果 | 场景 | 下一步 |
@@ -32,9 +36,10 @@ EdanSpec/feature/{timestamp}-{topic}/
 │   └── {capability}-spec.md
 ├── design.md              # 技术设计（实现方案）
 ├── review/                # 正式评审产物（可选）
-├── tasks.md               # 实施任务清单（task-plan 产出）
-└── status.json            # 当前状态
+└── status.json            # 元数据（state / conflicts）
 ```
+
+产物状态（proposal/specs/design 是否完成）从文件系统事实推导，不写入 status.json。运行脚本 `{{SCRIPTS}}/derive-artifact-status.py` 获取。
 
 ## 产物依赖图
 
@@ -44,17 +49,13 @@ EdanSpec/feature/{timestamp}-{topic}/
               ┌────┴────┐
               ▼         ▼
            specs      design
-              │         │
-              └────┬────┘
-                   ▼
-            task-plan（下一阶段）
 ```
 
-`specs` 和 `design` 都依赖 `proposal`，但两者之间无依赖。每个产物完成后更新 `status.json`，全部完成 → 引导进入 task-plan。
+`specs` 和 `design` 都依赖 `proposal`，但两者之间无依赖。产物状态由 `{{SCRIPTS}}/derive-artifact-status.py` 从文件存在性自动推导，全部完成 → 引导进入 task-plan。
 
 ## 恢复流程
 
-1. 读 `status.json`，重新计算每个 artifact 的 status（详见 [references/status-model.md](references/status-model.md)）
+1. 运行 `{{SCRIPTS}}/derive-artifact-status.py <feature-dir>` 获取各 artifact 状态
 2. 找到第一个 `ready` 的 artifact → 从它开始继续
 3. 全部 done → 方案已完成，引导进入 task-plan
 4. 全部 pending → 从零开始
@@ -74,7 +75,7 @@ EdanSpec/feature/{timestamp}-{topic}/
 
 从用户描述中提取：要解决什么问题？涉及哪些模块/文件？有没有约束条件？
 
-信息不够时，按 [references/clarification-guide.md](references/clarification-guide.md) 逐步澄清（`AskUserQuestion` 工具，每次一个维度，最多 3 轮）。描述已清晰则跳过。
+信息不够时，按 [references/clarification-guide.md](references/clarification-guide.md) 逐步澄清。描述已清晰则跳过。
 
 ### 步骤 2 — 创建 feature 目录和 status.json
 
@@ -86,15 +87,26 @@ mkdir -p "EdanSpec/specs"
 mkdir -p "EdanSpec/archive"
 ```
 
-初始化 `status.json`，包含 `name`、`created`、`base_commit`、`state: "active"`、`artifactGraph`（proposal / specs / design 三条记录，均 `pending`）、`designReviewState: "none"`、`reviewGate`（三个 review 均 `pending`）、`taskGraph: []`。字段详情见 [references/status-model.md](references/status-model.md)。
+初始化 `status.json`：
+
+```json
+{
+  "name": "20260520-user-login",
+  "created": "2026-05-20T10:00:00",
+  "base_commit": "abc1234",
+  "state": "active",
+  "designReviewState": "none",
+  "conflicts": []
+}
+```
 
 ### 步骤 3 — 冲突检测
 
-生成 specs 前，扫描所有活跃 feature 的 `specs/` 目录。文件名相同或语义相近（如 `auth-spec.md` vs `authentication-spec.md`）视为同一 capability。发现冲突则展示警告，用户确认后记录到 `status.json.conflicts`。
+生成 specs 前，运行 `{{SCRIPTS}}/derive-artifact-status.py --detect-conflicts`。脚本会扫描所有活跃 feature 的 `specs/`，基于文件名归一化（去连字符/下划线、转小写）和前缀匹配检测冲突（如 `auth-spec.md` vs `authentication-spec.md`）。发现冲突则展示警告，用户确认后记录到 `status.json.conflicts`。
 
 ### 步骤 4 — 按依赖图顺序生成产物
 
-循环：重新计算 status → 找出 `ready` 的 artifact → 逐个处理（读取依赖上下文 → 按需澄清 → 生成 → 更新 status 为 done）。顺序处理而非并行，是因为每个 artifact 生成时可能需要向用户提问，同时进入澄清阶段会让用户收到多个问题，体验混乱。
+循环：运行 `{{SCRIPTS}}/derive-artifact-status.py` → 找出 `ready` 的 artifact → 逐个处理（读取依赖上下文 → 按 clarification-guide 澄清缺失信息 → 生成）。顺序处理而非并行，是因为每个 artifact 生成时可能需要向用户提问，同时进入澄清阶段会让用户收到多个问题，体验混乱。
 
 #### proposal.md
 
@@ -125,7 +137,7 @@ mkdir -p "EdanSpec/archive"
 
 ### Requirement: {名称} [ADDED]
 
-系统 SHALL {做什么}。
+{做什么}。
 
 #### Scenario: {场景名}
 
@@ -143,14 +155,14 @@ Spec 是验收条件（what），不是实现方案（how）。代码结构、�
 
 ### 步骤 5 — 完成判定
 
-所有产物生成后：验证 status.json 中所有条目为 "done" 且文件真实存在 → 评估是否需要 design-review。
+所有产物生成后：运行 `{{SCRIPTS}}/derive-artifact-status.py` 验证所有条目为 "done" 且文件真实存在 → 评估是否需要 design-review。
 
 触发 design-review 引导的信号（任一满足）：3 个以上模块/文件变更、引入新的第三方依赖、架构层面变更 / 多系统集成 / 跨服务调用、安全/权限模型变更 / 数据库 schema 变更 / 性能有严格要求。
 
 引导话术：
-> "检测到架构层面变更，建议执行 `edanspec:design-review` 出详细方案后再拆分任务。也可以先跳过，直接拆分任务。要继续吗？"
+> "检测到架构层面变更，建议先出详细设计方案再拆分任务（如当前环境有 design-review 技能可调用）。也可以先跳过，直接拆分任务。要继续吗？"
 
-- 继续 → 更新 `designReviewState: "recommended"`，引导调用 design-review
+- 继续 → 更新 `designReviewState: "recommended"`，引导调用 design-review（如有）
 - 跳过 → 更新 `designReviewState: "skipped"`，进入步骤 6
 - 无需 review → `designReviewState` 保持 `"none"`，直接进入步骤 6
 
@@ -160,7 +172,32 @@ Spec 是验收条件（what），不是实现方案（how）。代码结构、�
 
 ## 状态管理
 
-详见 [references/status-model.md](references/status-model.md)。核心规则：状态流转 `pending → ready → done`，文件变更后回滚到 `ready`。每次读写文件后重新计算 status，不缓存旧状态。
+### 产物状态
+
+由 `{{SCRIPTS}}/derive-artifact-status.py` 从文件存在性推导，每次需要时重新运行，不缓存旧状态。三种状态：
+
+| 状态 | 含义 |
+|------|------|
+| `done` | 文件存在且非空 |
+| `ready` | 文件不存在或为空，但依赖已就绪 |
+| `pending` | 文件不存在或为空，且依赖未满足 |
+
+计算按依赖顺序进行：proposal → specs/design → 三者都 done 后引导进入 task-plan。
+
+### Feature 生命周期（state）
+
+```
+active ──(全部任务+审查完成)──→ completed ──(归档)──→ archived
+  │
+  └──(用户放弃)──→ abandoned
+```
+
+| 值 | 含义 | 何时写入 |
+|---|---|---|
+| `active` | feature 进行中 | create-spec 初始化 |
+| `completed` | 全部任务 + 审查关卡通过，待归档 | task-implement 步骤六完成后 |
+| `archived` | 已移入 `EdanSpec/archive/` | archive 移动文件后 |
+| `abandoned` | 用户主动放弃 | 用户明确说放弃时 |
 
 ## 验证
 
@@ -168,15 +205,15 @@ Spec 是验收条件（what），不是实现方案（how）。代码结构、�
 
 ### 文件完整性
 
-- [ ] `status.json` 存在且是有效 JSON
 - [ ] `proposal.md` 存在且非空
 - [ ] `specs/` 目录下至少有一个 `{capability}-spec.md`
 - [ ] `design.md` 存在且非空
+- [ ] 运行 `{{SCRIPTS}}/derive-artifact-status.py` 输出所有 artifact 为 done
 
 ### 内容质量
 
 - [ ] `proposal.md` 包含 Why / What Changes / Impact 三个章节
-- [ ] 每条 spec 使用 `SHALL` 描述需求，包含至少一个 `Scenario`
+- [ ] 每条 spec 描述明确可验证的需求，包含至少一个 `Scenario`
 - [ ] spec 中无模糊词（"应该""大概""可能""或许"）
 - [ ] `design.md` 包含设计目标（Goals）、技术决策（Decisions）、风险与应对
 - [ ] `design.md` 中每个技术决策有至少两种方案对比
@@ -184,16 +221,14 @@ Spec 是验收条件（what），不是实现方案（how）。代码结构、�
 
 ### 状态一致性
 
-- [ ] `status.json` 中 `artifactGraph` 的每个条目 `status` 与实际文件存在情况一致
-- [ ] `artifactGraph` 中 `dependsOn` 指向的依赖项 `status` 均为 `done`
-- [ ] 冲突检测结果（如有）已记录到 `status.json.conflicts`
+- [ ] `{{SCRIPTS}}/derive-artifact-status.py` 输出的 artifact 状态与文件存在情况一致
 
 ### 流程完整
 
 - [ ] 场景识别正确（新建 / 恢复 / 变更）
-- [ ] 新建时已初始化 `status.json`（state=active, artifactGraph 三条 pending 记录）
+- [ ] 新建时已初始化 `status.json`（state=active, conflicts=[]）
 - [ ] 变更时完整重写了所有产物（非局部追加、无 [REMOVED] 等历史标记）
-- [ ] 恢复时已读取 `status.json` 并重新计算状态
+- [ ] 恢复时已运行 `{{SCRIPTS}}/derive-artifact-status.py` 获取状态
 - [ ] 已评估是否需要 design-review，并正确设置 `designReviewState`
 
 ## 常见误区与警示信号
@@ -206,4 +241,4 @@ Spec 是验收条件（what），不是实现方案（how）。代码结构、�
 | "spec 写太细了没必要" | spec 不是文档，是可验证的验收条件 |
 | "反正后面还会改，现在随便写写" | 方案的价值是写之前想清楚 |
 
-出现以下任一信号时立即停下来修正：用户描述都没读完就开始生成 · spec 里出现"应该""大概"等模糊词 · design 自行更换了项目已有的技术栈 · 未检测冲突就生成 spec · 生成后未更新 status.json。
+出现以下任一信号时立即停下来修正：用户描述都没读完就开始生成 · spec 里出现"应该""大概"等模糊词 · design 自行更换了项目已有的技术栈 · 未检测冲突就生成 spec。

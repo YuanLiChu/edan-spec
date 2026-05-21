@@ -86,6 +86,14 @@ feature 归档前的最终关卡。"拿证据说话"——但结构化告诉你*
 | 正确性       | M/N 需求已覆盖    |
 | 一致性       | 遵循设计 / N 处偏离 |
 
+## 问题摘要
+
+| 级别 | 数量 | 说明 |
+|------|------|------|
+| CRITICAL | N | 必须解决，否则不能归档 |
+| IMPORTANT | N | 应该解决 |
+| SUGGESTION | N | 可选改进 |
+
 **CRITICAL（必须解决，否则不能归档）**
 
 - `文件:行号` 未完成任务：<任务描述>
@@ -121,24 +129,24 @@ feature 归档前的最终关卡。"拿证据说话"——但结构化告诉你*
 
 跳过的维度在报告中注明原因。
 
-## 归档前流程
+## 报告持久化
 
-1. 运行三维度验证
-2. 有 CRITICAL → 拒绝归档，返回报告。引导用户回退到 `edanspec:task-implement` 修复对应任务。更新 `status.json`：`reviewGate.verify.status = "failed"`，`reviewGate.verify.hasCritical = true`，记录各严重度数量到 `reviewGate.verify.findings`
-3. 有 IMPORTANT（无 CRITICAL）→ 展示报告，说明存在 N 个 IMPORTANT 建议，用户确认后可归档。更新 `status.json`：`reviewGate.verify.status = "passed"`，`reviewGate.verify.hasCritical = false`，记录 findings（`important > 0`）
-4. 全部通过 → 展示报告，输出"验证通过，可以归档"。更新 `status.json`：`reviewGate.verify.status = "passed"`，`reviewGate.verify.hasCritical = false`，`findings` 记录实际发现数量（可能全为 0，也可能有少量 SUGGESTION）
+验证完成后，**必须将报告写入文件**，以便 task-implement 步骤六基于事实检查。
 
-**`status` 字段语义**：
+| 条件 | 操作 |
+|------|------|
+| 在 feature 目录下（存在 `EdanSpec/feature/` 路径） | 将报告写入 `{feature-dir}/verify-report.md`，并输出报告到控制台 |
+| 不在 feature 目录下 | 仅输出报告到控制台，不写文件 |
 
-| 值 | 含义 | 归档 |
-|---|------|------|
-| `pending` | 尚未执行 | 不允许 |
-| `passed` | 无 CRITICAL，可进入下一步 | 允许（IMPORTANT 时需用户确认） |
-| `failed` | 有 CRITICAL，必须修复 | 不允许 |
+**报告文件路径**：`{feature-dir}/verify-report.md`。task-implement 恢复时通过读取此文件判断是否已通过。
 
-**`findings` 字段**：`{ "critical": N, "important": N, "suggestion": N }`，记录各严重度发现数量。archive 据此判断是否存在遗留问题。
+**判定规则：**
+- 有 CRITICAL → `verify-report.md` 中 CRITICAL 数量 > 0，归档被拒绝
+- 无 CRITICAL → `verify-report.md` 中 CRITICAL 数量为 0，可归档（IMPORTANT 时需用户确认）
 
-**verify 只负责验证、输出报告和更新 status.json。delta spec 合并和文件移动由 `edanspec:archive` 负责。**
+**`findings` 字段**：报告中使用 `问题摘要` 表格记录各严重度发现数量，格式见报告格式章节。archive 据此判断是否存在遗留问题。
+
+**verify 只负责验证、输出报告和写入报告文件。delta spec 合并和文件移动由 `edanspec:archive` 负责。**
 
 ## 常见误区与反驳
 
