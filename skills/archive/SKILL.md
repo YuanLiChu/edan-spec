@@ -70,44 +70,78 @@ EdanSpec/specs/                          EdanSpec/feature/xxx/specs/
 确保 EdanSpec/specs/ 目录存在
 
 对 feature 中每个 delta spec（specs/{capability}-spec.md）：
-  ├─ 主 spec 不存在 → 直接复制到 EdanSpec/specs/
-  └─ 主 spec 存在 →
-     ├─ 提取每个需求的操作类型（见 3.3 格式约定）
-     ├─ ADDED    → 追加到主 spec 末尾
-     ├─ MODIFIED → 按需求名匹配，替换整块
+  ├─ 主 spec 不存在 → 创建新主规格文件
+  │    ├─ 标题：# {capability}
+  │    ├─ 添加 ## Purpose 部分（可简短标记为 TBD）
+  │    ├─ 添加 ## Requirements 部分
+  │    └─ 将 delta 中 ADDED 需求追加到 ## Requirements 下
+  │         （跳过 MODIFIED/REMOVED 分区，无源可改）
+  └─ 主 spec 存在 → 智能应用变更（见 3.3 关键原则）
+     ├─ ADDED    → 需求不存在则追加到 ## Requirements 末尾；已存在则视为隐式 MODIFIED 更新
+     ├─ MODIFIED → 按需求名匹配，场景级增量合并（保留未提及的场景/内容）
      ├─ REMOVED  → 从主 spec 删除对应需求
-     └─ RENAMED  → 更新需求名，内容不变
+     └─ RENAMED  → 找到 FROM 需求，重命名为 TO，内容不变
 ```
 
-### 3.3 Delta Spec 格式约定
+> **重要**：delta spec 的分区标题（`## ADDED Requirements` 等）是操作指令，**不会**出现在主规格中。主规格始终是扁平结构：`# {capability}` → `## Purpose` → `## Requirements` → 若干 `### Requirement:` 块。
 
-需求块**必须在需求名后标记操作类型**：
+### 3.3 关键原则：智能合并
+
+与程序化整块替换不同，运用判断来合理合并变更：
+
+- **场景级增量**：MODIFIED 不需要复制整个需求块——只包含要添加/修改的场景
+- **保留未提及内容**：delta 中未提到的现有场景/描述保持不变
+- **幂等性**：同一 delta spec 合并两次应得到相同结果
+- **变更前双读**：同时读取 delta spec 和主 spec，理解意图后再编辑
+- **边做边展示**：每个能力改完后展示摘要（做了什么变更）
+
+**示例**：主规格有 5 个场景，delta 只想新增 1 个场景 → 只加那个场景，保留其余 4 个。
+
+### 3.4 Delta Spec 格式约定
+
+Delta spec 使用**分区标题**声明操作类型，而非行内标签：
 
 ```markdown
 # {Capability} 规格
 
-### Requirement: 用户登录 [ADDED]
+## ADDED Requirements
+
+### Requirement: 用户登录
 支持用户名密码登录。
 
-### Requirement: 密码复杂度 [MODIFIED]
-密码至少 8 位，包含大小写字母和数字。
+#### Scenario: 正常登录
+- **WHEN** 输入正确的用户名和密码
+- **THEN** 返回用户信息和认证令牌
 
-### Requirement: 邮箱验证 [REMOVED]
+## MODIFIED Requirements
 
-### Requirement: 用户名限制 [RENAMED] 原名: 用户名长度
+### Requirement: 密码复杂度
+#### Scenario: 增加大小写要求
+- **WHEN** 设置密码
+- **THEN** 密码必须包含至少一个大写字母和一个小写字母
+
+## REMOVED Requirements
+
+### Requirement: 邮箱验证
+
+## RENAMED Requirements
+
+- FROM: `### Requirement: 用户名长度`
+- TO: `### Requirement: 用户名限制`
 ```
 
-| 标记 | 合并行为 |
+| 分区 | 合并行为 |
 |------|---------|
-| `[ADDED]` | 追加到主 spec 末尾 |
-| `[MODIFIED]` | 按需求名匹配，替换整块 |
-| `[REMOVED]` | 从主 spec 删除对应需求 |
-| `[RENAMED] 原名: X` | 主 spec 中改名，内容不变 |
-| 无标记 | 视为 ADDED |
+| `## ADDED Requirements` | 需求不存在则追加；已存在则视为隐式 MODIFIED 更新 |
+| `## MODIFIED Requirements` | 按需求名匹配，场景级增量合并（保留未提及内容） |
+| `## REMOVED Requirements` | 从主 spec 删除对应需求 |
+| `## RENAMED Requirements` | 主 spec 中改名，内容不变 |
 
-需求块范围：从 `### Requirement:` 到下一个 `### Requirement:` 或文件末尾。
+需求块范围：从分区标题（`## ADDED Requirements` 等）到下一个分区标题。每个分区下的 `### Requirement:` 块到下一个 `### Requirement:` 或分区标题结束。
 
-### 3.4 冲突检测
+**MODIFIED 只写变更部分**：不需要复制整个需求——只列出要添加/修改的场景，未提及的场景自动保留。
+
+### 3.5 冲突检测
 
 合并前扫描是否有其他活跃 feature 修改了同一 capability：
 
@@ -153,7 +187,8 @@ mv EdanSpec/feature/{name} EdanSpec/archive/
 - verify 为 pending 时未引导就直接归档
 - 主动执行验证而非引导用户调用 verify
 - verify 为 failed 仍批准归档
-- 合并 delta spec 时覆盖主 spec 已有内容
+- 合并 delta spec 时整块替换而非智能增量合并
+- 合并 delta spec 时覆盖主 spec 已有未提及内容
 - 未检测冲突就移动文件
 - 合并前未确保 `EdanSpec/specs/` 目录存在
 

@@ -291,9 +291,16 @@ python {{SCRIPTS}}/derive-review-status.py EdanSpec/feature/<name>
 
 ### 6.5 审查完成判定
 
-运行 `{{SCRIPTS}}/derive-review-status.py` 确认 `allPassed = true` → 更新 `status.json`：`state = "completed"`，然后引导用户归档：
+运行 `{{SCRIPTS}}/derive-review-status.py` 确认 `allPassed = true` → 更新 `status.json`：`state = "completed"`，然后提示用户归档：
 
-> "实现完成，全部审查通过。要现在归档这个 feature 吗？（`edanspec:archive`）"
+使用 **AskUserQuestion 工具**让用户决定：
+
+> "实现完成，全部审查通过。要现在归档这个 feature 吗？归档会合并 Delta Spec 到主规格并清理 feature 目录。"
+
+| 用户选择 | 操作 |
+|---------|------|
+| 是，归档 | 引导调用 `edanspec:archive` |
+| 暂不归档 | 接受，但告知风险："Delta Spec 未合并，后续新 feature 可能产生冲突误判。下次会话可用 `create-spec` 启动检测提醒归档。" |
 
 **任一关卡未执行或未通过 → 不算实现完成。** 恢复时从报告文件推导的 pending/failed 关卡继续。
 

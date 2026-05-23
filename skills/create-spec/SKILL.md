@@ -16,7 +16,16 @@ description: 为需求创建或更新方案文档（proposal + spec + design）�
 > `{{SCRIPTS}}` 引用自文件顶部 SCRIPTS 锚点。
 
 1. 扫描 `EdanSpec/feature/` 下所有子目录，运行脚本 `{{SCRIPTS}}/derive-artifact-status.py` 获取产物状态
-2. 根据匹配结果分流：
+2. 扫描所有 feature 的 `status.json`，收集 `state = "completed"` 的 feature 列表
+3. **遗留归档检查**：如果存在已完成的未归档 feature，使用 **AskUserQuestion** 让用户选择：
+
+| 问题 | "有已完成但未归档的 feature：`{列表}`，是否先归档？" |
+|------|--------|
+| **header** | "遗留归档" |
+| **选项 1** | "先归档，再继续" → 引导调用 `edanspec:archive`，归档完成后继续后续流程 |
+| **选项 2** | "暂不处理，继续原流程" → 接受，不阻塞，继续自动识别场景分流 |
+
+4. 根据匹配结果分流：
 
 | 检测结果 | 场景 | 下一步 |
 |----------|------|--------|
@@ -66,7 +75,7 @@ EdanSpec/feature/{timestamp}-{topic}/
 
 1. 重新读取 `proposal.md`、`specs/`、`design.md`，理解当前方案全貌
 2. 根据用户变更意图，从头生成所有产物——不是局部修改，而是完整重写，确保各文件之间逻辑一致
-3. 将旧文件替换为新内容（不追加、不标记 `[REMOVED]`），保留 git 历史即可追溯差异
+3. 将旧文件替换为新内容（不追加、不遗留历史标记），保留 git 历史即可追溯差异
 4. 完成后展示变更摘要，让用户确认改了什么
 
 ## 新建流程
@@ -106,11 +115,20 @@ mkdir -p "EdanSpec/archive"
 
 ### 步骤 4 — 按依赖图顺序生成产物
 
-循环：运行 `{{SCRIPTS}}/derive-artifact-status.py` → 找出 `ready` 的 artifact → 逐个处理（读取依赖上下文 → 按 clarification-guide 澄清缺失信息 → 生成）。顺序处理而非并行，是因为每个 artifact 生成时可能需要向用户提问，同时进入澄清阶段会让用户收到多个问题，体验混乱。
+依赖顺序：`proposal` → `specs` + `design`（后两者无依赖，可任意顺序）。
 
-#### proposal.md
+**流程**：每次生成一个 artifact 前，运行 `{{SCRIPTS}}/derive-artifact-status.py` 确认依赖已就绪。逐个处理而非并行——每个 artifact 生成时可能需要向用户提问，同时进入澄清阶段会让用户收到多个问题，体验混乱。
 
-所有功能都必须有 proposal，小功能可以极简：
+#### 步骤 4.1 — 提案（proposal.md）
+
+**前置**：无依赖，第一个生成。
+
+**生成前先分类**：对每个能力判断是 New 还是 Modified。
+1. 读取 `EdanSpec/specs/` 下已归档的主规格，了解系统已有哪些能力
+2. 在代码库中搜索对应实现（grep 关键词、搜索相关文件）
+3. 归档 spec 中存在 或 代码中已实现 → Modified（**包括删除已有功能**），两者都不存在 → New
+
+提案格式，小功能可以极简：
 
 ```markdown
 # {Topic} 提案
@@ -123,19 +141,35 @@ mkdir -p "EdanSpec/archive"
 
 - [变更要点，列点]
 
+## Capabilities
+
+### New Capabilities
+<!-- 新增的能力。每个创建 specs/<name>-spec.md -->
+- `<name>`：[此能力覆盖的范围]
+
+### Modified Capabilities
+<!-- 需求发生变更的已有能力。每个也需创建 specs/<existing-name>-spec.md，使用 MODIFIED 分区描述变更。无变更则留空或删除此小节 -->
+- `<existing-name>`：[哪个需求在变更，变更了什么]
+
 ## Impact
 
 - `path/to/file`：[变更内容]
 ```
 
-#### specs/{capability}-spec.md
+#### 步骤 4.2 — 规格（specs/{capability}-spec.md）
+
+**前置**：proposal.md 已生成。
+
+**生成规则**：proposal 中 `New Capabilities` 和 `Modified Capabilities` 下的每一项都必须生成对应的 `specs/<name>-spec.md` 文件，不得遗漏。
+
+**New Capabilities** 使用 `## ADDED Requirements` 分区——描述全新引入的功能和验收条件：
 
 ```markdown
 # {Capability} 规格
 
-## Requirements
+## ADDED Requirements
 
-### Requirement: {名称} [ADDED]
+### Requirement: {名称}
 
 {做什么}。
 
@@ -145,13 +179,36 @@ mkdir -p "EdanSpec/archive"
 - **THEN** {预期结果}
 ```
 
+**Modified Capabilities** 使用 `## MODIFIED Requirements` 分区——描述已有需求中哪些条款在变更，需同时给出变更后的期望行为和回归场景：
+
+```markdown
+# {Capability} 规格
+
+## MODIFIED Requirements
+
+### Requirement: {被修改的需求名称}
+
+{变更说明：原行为 → 新行为}。
+
+#### Scenario: {变更场景名}
+
+- **WHEN** {触发条件}
+- **THEN** {变更后的预期结果}
+```
+
+首次创建且不影响已有能力时，只有 `## ADDED Requirements` 分区。涉及已有能力变更时才会出现 `## MODIFIED Requirements` / `## REMOVED Requirements` / `## RENAMED Requirements` 分区（见 change-workflow.md）。
+
+> **Delta Spec ≠ 主规格**：此处生成的 `specs/{capability}-spec.md` 是增量变更，使用分区标题声明操作类型。归档合并时，分区标题作为操作指令被消耗，需求会被放入主规格（`EdanSpec/specs/`）的 `## Requirements` 扁平容器下。
+
 Spec 是验收条件（what），不是实现方案（how）。代码结构、算法选型、数据库设计属于 design.md。模糊词（"应该""大概""可能"）意味着需求还没有想清楚——每条 spec 必须能被测试验证。
 
-#### design.md
+#### 步骤 4.3 — 设计（design.md）
+
+**前置**：proposal.md 已生成（不依赖 specs）。
 
 生成前先读取 [references/design-guide.md](references/design-guide.md)。
 
-已有项目时沿用现有技术栈——自行更换框架会在团队中制造技术债和认知分裂，也让后续维护成本成倍增长。新项目参考 `references/platform-*.md` 逐项确认技术选型。
+已有项目时沿用现有技术栈——自行更换框架会制造技术债和认知维护成本成倍增长。新项目参考 `references/platform-*.md` 逐项确认技术选型。
 
 ### 步骤 5 — 完成判定
 
@@ -206,15 +263,17 @@ active ──(全部任务+审查完成)──→ completed ──(归档)──
 ### 文件完整性
 
 - [ ] `proposal.md` 存在且非空
-- [ ] `specs/` 目录下至少有一个 `{capability}-spec.md`
+- [ ] `specs/` 目录下的 spec 文件数量 = proposal 中 `New Capabilities` + `Modified Capabilities` 的条目总数（不得遗漏）
 - [ ] `design.md` 存在且非空
 - [ ] 运行 `{{SCRIPTS}}/derive-artifact-status.py` 输出所有 artifact 为 done
 
 ### 内容质量
 
-- [ ] `proposal.md` 包含 Why / What Changes / Impact 三个章节
+- [ ] `proposal.md` 包含 Why / What Changes / Capabilities / Impact 四个章节
+- [ ] Capabilities 分类正确：代码中已有的功能（含删除）归入 Modified，真正从零开始的功能归入 New
 - [ ] 每条 spec 描述明确可验证的需求，包含至少一个 `Scenario`
 - [ ] spec 中无模糊词（"应该""大概""可能""或许"）
+- [ ] spec 使用分区格式（`## ADDED Requirements` 或 `## MODIFIED Requirements`），而非行内标签 `[ADDED]`
 - [ ] `design.md` 包含设计目标（Goals）、技术决策（Decisions）、风险与应对
 - [ ] `design.md` 中每个技术决策有至少两种方案对比
 - [ ] `design.md` 沿用项目已有技术栈，未自行更换框架
@@ -227,7 +286,7 @@ active ──(全部任务+审查完成)──→ completed ──(归档)──
 
 - [ ] 场景识别正确（新建 / 恢复 / 变更）
 - [ ] 新建时已初始化 `status.json`（state=active, conflicts=[]）
-- [ ] 变更时完整重写了所有产物（非局部追加、无 [REMOVED] 等历史标记）
+- [ ] 变更时完整重写了所有产物（非局部追加、使用分区格式）
 - [ ] 恢复时已运行 `{{SCRIPTS}}/derive-artifact-status.py` 获取状态
 - [ ] 已评估是否需要 design-review，并正确设置 `designReviewState`
 
