@@ -95,7 +95,7 @@ description: 任务规划。将需求/设计分解为可执行的任务文档（
   - 对应验收标准：密码强度校验
   - 完成判定：`./gradlew test --tests "*PasswordValidatorTest*"` 通过 && `./gradlew assembleDebug` 无错误
 
-**失败策略**：同一增量修复超过 2 次未成功 → STOP,调 edanspec:debugging 定位根因；超过 3 次 → STOP,调 edanspec:explore 重新审视方案；超过 4 次 → 停止并报告用户。
+**失败策略**：见 tasks.md 全局约定 — 连续 2 次失败 → debugging，3 次 → explore，4 次 → 报告用户。
 ```
 
 ### 排序与检查点
