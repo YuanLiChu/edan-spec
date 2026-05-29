@@ -284,7 +284,7 @@ python {{SCRIPTS}}/derive-review-status.py EdanSpec/feature/<name>
 
 ### 6.4 执行 verify
 
-调用 `edanspec:verify` 对当前 feature 执行三维度验证。验证完成后报告必须写入 `{feature-dir}/verify-report.md`。
+调用 `edanspec:verify` 对当前 feature 执行三维度验证。verify 通过 Agent tool 启动通用代理在独立子进程中执行。验证完成后报告必须写入 `{feature-dir}/verify-report.md`。
 
 - **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后删除 `verify-report.md`，重新执行 verify
 - **无 CRITICAL** → 报告写入 `verify-report.md`，实现完成
