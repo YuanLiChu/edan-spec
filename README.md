@@ -125,46 +125,56 @@ flowchart LR
 cd /path/to/your/project
 ```
 
-#### 2. 初始化 Agent 工程
-
-在项目中创建 `.claude/` 目录并导入 EdanSpec 的全部资源：
+#### 2. 执行初始化脚本
 
 ```bash
-# 创建 .claude 目录
-mkdir -p .claude
-
-# 拷贝 EdanSpec 资源（skills、agents、rules、AGENT.md、CLAUDE.md 等）
-cp -r /path/to/edan-spec/skills .claude/
-cp -r /path/to/edan-spec/agents .claude/
-cp -r /path/to/edan-spec/rules   .claude/
-cp    /path/to/edan-spec/AGENT.md   .claude/
-cp    /path/to/edan-spec/CLAUDE.md  .claude/
+# 根据你的 Agent 工具选择 platform 参数
+# claudecode  — 部署到 Claude Code（生成 .claude/ 目录）
+# opencode    — 部署到 OpenCode（生成 .opencode/ + opencode.json）
+/path/to/edan-spec/setup.sh . claudecode
+# 或
+/path/to/edan-spec/setup.sh . opencode
 ```
 
-启动 Claude Code，验证资源是否正确加载：
+#### 3. 验证资源加载
 
+**Claude Code**：
 ```bash
-claude                        # 进入交互式会话
-# 在会话中输入：
-/skills                       # 检查 skills 列表，应看到 edanspec: 前缀的 11 个技能
+claude               # 进入交互式会话
+/skills              # 检查 skills 列表，应看到 edanspec: 前缀的 11 个技能
 ```
 
-#### 3. 初始化项目规范
-
-**首次接入新项目**时，生成项目根目录下的 `CLAUDE.md`：
-
+**OpenCode**：
 ```bash
-claude                        # 启动 Claude Code
-/init                         # 生成项目根目录下的 CLAUDE.md（注意：区别于 .claude/CLAUDE.md）
+opencode             # 进入交互式会话
+# 检查 agents 和 skills 已正确加载
 ```
+
+#### 4. 初始化项目规范（可选）
+
+**首次接入新项目**时，生成项目根目录下的规范文件：
+
+Claude Code：
+```bash
+claude               # 启动 Claude Code
+/init                # 生成项目根目录下的 CLAUDE.md
+```
+
+OpenCode：启动后 Agent 会自动加载 `.opencode/AGENTS.md` 中的指令。
 
 如果是**非空项目**（已有代码），继续执行 `project-context` 生成知识地图：
 
+Claude Code：
 ```bash
 /skill project-context        # 扫描项目结构，生成 EdanSpec/context/ 知识地图
 ```
 
-生成完成后，在项目级 `CLAUDE.md` 中添加对知识地图的引用，示例格式如下：
+OpenCode：
+```bash
+/skill project-context        # 扫描项目结构，生成 EdanSpec/context/ 知识地图
+```
+
+生成完成后，在项目根目录规范文件中添加对知识地图的引用：
 
 ```markdown
 ## 项目知识地图
@@ -176,7 +186,7 @@ claude                        # 启动 Claude Code
 - [业务流文档](EdanSpec/context/MEMORY.md) — 各业务流程的完整调用链和异常处理
 ```
 
-> **提示**：根据 `project-context` 实际生成的模块文档路径调整上述链接，确保指向正确的文件。
+> **提示**：根据 `project-context` 实际生成的模块文档路径调整上述链接。
 
 ---
 
