@@ -17,7 +17,7 @@
 
 - Claude Code 的 `.claude/` 资源。
 - OpenCode 的 `.opencode/` 与 `opencode.json`。
-- Kilo Code 的 `.kilo/skills/` 与项目根 `AGENTS.md`。
+- Kilo Code 的 `.kilo/skills/`、`.kilo/agents/` 与项目根 `AGENTS.md`。
 - 每个平台独立的 `INSTALL.md`。
 - 每个平台包内文件的 `MANIFEST.sha256`。
 - 三个最终 ZIP 的汇总校验文件 `SHA256SUMS.txt`。
@@ -81,6 +81,7 @@ Kilo Code 包：
 ```text
 /
 ├── .kilo/
+│   ├── agents/
 │   └── skills/
 ├── AGENTS.md
 ├── INSTALL.md
@@ -107,6 +108,7 @@ Kilo Code 包：
 ### 6.3 Kilo Code
 
 - 从 OpenCode 兼容 Skill 复制到 `.kilo/skills/`。
+- 将 `project-context` 依赖的 `module-explorer`、`flow-explorer` 适配为 Kilo `subagent`，放入 `.kilo/agents/`。
 - Skill 目录名必须与 frontmatter `name` 一致。
 - 名称只能使用小写字母、数字和连字符，不使用 Claude 风格的冒号。
 - 根目录提供 `AGENTS.md`，使 Kilo 加载项目规范。
@@ -146,6 +148,7 @@ Kilo Code 包：
 - 不包含 `.DS_Store`、`__pycache__`、`.pyc`、日志或 Git 元数据。
 - Claude Code 与 OpenCode 包包含各自完整的平台入口。
 - Kilo 包中每个 Skill 的目录名与 frontmatter `name` 一致。
+- Kilo 包中的 `module-explorer`、`flow-explorer` 可由 `kilo debug agent <name>` 发现。
 
 ### 9.3 CLI 验证
 
