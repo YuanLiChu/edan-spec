@@ -17,7 +17,7 @@
 
 - Claude Code 的 `.claude/` 资源。
 - OpenCode 的 `.opencode/` 与 `opencode.json`。
-- Kilo Code 的 `.kilo/skills/`、`.kilo/agents/` 与项目根 `AGENTS.md`。
+- Kilo Code 的 `.kilo/skills/`、`.kilo/agents/`、`.kilo/docs/`、`.kilo/rules/` 与项目根 `AGENTS.md`。
 - 每个平台独立的 `INSTALL.md`。
 - 每个平台包内文件的 `MANIFEST.sha256`。
 - 三个最终 ZIP 的汇总校验文件 `SHA256SUMS.txt`。
@@ -82,6 +82,8 @@ Kilo Code 包：
 /
 ├── .kilo/
 │   ├── agents/
+│   ├── docs/
+│   ├── rules/
 │   └── skills/
 ├── AGENTS.md
 ├── INSTALL.md
@@ -109,6 +111,7 @@ Kilo Code 包：
 
 - 从 OpenCode 兼容 Skill 复制到 `.kilo/skills/`。
 - 将 `project-context` 依赖的 `module-explorer`、`flow-explorer` 适配为 Kilo `subagent`，放入 `.kilo/agents/`。
+- 将规范引用依赖复制到 `.kilo/docs/`、`.kilo/rules/`，并把根 `AGENTS.md` 与 Skill 内路径适配为 `.kilo/...`。
 - Skill 目录名必须与 frontmatter `name` 一致。
 - 名称只能使用小写字母、数字和连字符，不使用 Claude 风格的冒号。
 - 根目录提供 `AGENTS.md`，使 Kilo 加载项目规范。
