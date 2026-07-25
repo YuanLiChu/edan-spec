@@ -1,48 +1,77 @@
 # Project: {project-name}
 
-## 项目目标
+## 阅读入口
 
-{1-2 句话说明本项目解决什么问题，核心价值是什么。}
+{2-4 句话说明系统解决什么问题、从哪个入口读图、当前地图覆盖什么、不覆盖什么。}
 
 ## 基本信息
 
 | 属性 | 值 |
 |------|-----|
 | 名称 | {name} |
-| 项目类型 | {monolith / microservice / frontend / library} |
-| 技术栈 | {tech-stack} |
+| 项目类型 | {monolith / modular-monolith / multi-service / frontend / library / source-snapshot} |
+| 技术栈 | {tech-stack-with-versions} |
 | 构建工具 | {build-tool} |
-| 包结构/根命名空间 | {root-package} |
+| 代码规模 | {file/line summary or Unknown} |
+| 分析根目录 | `{absolute-project-path}` |
 
-> 技术栈应包含关键框架及其版本号，如 `Spring Boot 3.2.x`、`Vue 3.x`。
+## CodeGraph 索引健康
 
-## 基础设施
+| 属性 | 值 |
+|------|-----|
+| 版本 | {codegraph-version} |
+| 索引路径 | `{index-path}` |
+| 状态 | {index.state / Unknown} |
+| 文件 / 节点 / 边 | {fileCount} / {nodeCount} / {edgeCount} |
+| 覆盖语言 | {languages} |
+| 待同步 / 待解析 | {pendingChanges / pendingRefs} |
+| 工作树匹配 | {worktreeMismatch} |
 
-| 类型 | 技术/服务 | 用途 |
-|------|-----------|------|
-| 数据库 | {MySQL / PostgreSQL / MongoDB / ...} | {用途} |
-| 缓存 | {Redis / Memcached / ...} | {用途} |
-| 消息队列 | {Kafka / RabbitMQ / ...} | {用途} |
-| 外部服务 | {服务 A} | {用途} |
+> 无法从实际命令获得的值写 `Unknown`，不要猜测。
 
-> 只列出全局共享的基础设施。模块专属的中间件在 module.md 中说明。
+## 基础设施与外部边界
 
-## 架构概览
+| 类型 | 技术/系统 | 用途 | Evidence ID |
+|------|-----------|------|-------------|
+| 数据库/缓存/消息/外部服务 | {name} | {purpose} | P-001 |
+
+## L0 系统地图
 
 ```mermaid
-graph TD
-    A[模块 A] --> B[模块 B]
-    A --> C[模块 C]
-    B --> D[(数据存储)]
+flowchart LR
+    UI[用户入口<br/>{UISubsystem}] -->|调用 P-002| CORE[核心领域<br/>{CoreSubsystem}]
+    CORE -->|写入 P-003| DB[(数据存储)]
+    CORE -.->|推断 P-004| EXT[外部系统<br/>{ExternalSystem}]
 ```
 
-> 架构概览只画模块级节点，不画类级细节。每个节点标注模块名和核心职责（≤10 字）。
-> **本图是模块间关系的权威来源**，module.md 中的「模块交互」应与之保持一致。
+### 图例
+
+- 实线：Verified
+- 虚线：Graph-Heuristic / Inferred
+- 点线到“待确认”：Unknown
+
+> L0 保持 10-30 个领域、子系统和外部边界节点。所有重要边标明关系语义和 Evidence ID。
 
 ## 模块索引
 
-| 模块 | 源码路径 | 设计文档 | 职责简述 |
-|------|----------|----------|----------|
-| {module-name} | `{source-path}` | [module.md](modules/{module-name}/module.md) | {一句话职责} |
+| 模块 | 工程职责 | 源码路径 | L1 文档 | 证据状态 |
+|------|----------|----------|---------|----------|
+| {module-name} | {responsibility} | `{source-path}` | [module.md](modules/{module-name}/module.md) | Verified / Inferred |
 
-> 模块命名使用 kebab-case，如 `alarm-manager`、`data-collector`。
+## 证据
+
+| Evidence ID | 事实/关系 | 来源 | 定位 | 证据状态 | 置信度 | 备注 |
+|-------------|-----------|------|------|----------|--------|------|
+| P-001 | {fact} | CodeGraph / Source / Config / Existing Doc | `{path:line or symbol}` | Verified | High | {note} |
+
+## 已知盲区
+
+| 盲区 | 影响的模块/关系 | 当前状态 | 补证方法 |
+|------|---------------|----------|----------|
+| {dynamic mechanism} | {P-xxx / module} | Unknown | {targeted source/runtime/manual check} |
+
+## 后续下钻
+
+- 建议优先生成的 L1：{modules}
+- 建议优先追踪的 L2：{flows}
+- 当前未覆盖范围：{out-of-scope}

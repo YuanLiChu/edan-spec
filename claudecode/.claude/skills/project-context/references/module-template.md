@@ -1,112 +1,85 @@
 # Module: {ModuleName}
 
+## 阅读入口
+
+{2-4 句话说明模块为什么存在、主要入口、最重要依赖和本图边界。}
+
 ## 职责边界
 
 - **负责**：
-  - {职责 1}
-  - {职责 2}
+  - {responsibility}
 - **不负责**：
-  - {明确排除的职责 1（由 {other-module} 负责）}
-  - {明确排除的职责 2}
+  - {excluded responsibility，由 other-module 负责}
 
-> 边界模糊是后续 feature 冲突的主要来源，务必明确"不负责"的范围。
+## 公共入口与接口
 
-## 公共接口
+| 工程入口 | 代码符号/端点 | 调用方 | 用途 | Evidence ID |
+|----------|---------------|--------|------|-------------|
+| {human-readable entry} | `{Class::method / API / event}` | {caller} | {purpose} | M-001 |
 
-| 接口/端点 | 协议 | 调用方 | 用途 |
-|-----------|------|--------|------|
-| `{API/MethodName}` | {REST / gRPC / 内部方法} | {模块 X / 前端} | {一句话用途} |
+## 核心数据
 
-> 列出模块对外暴露的主要入口。REST 接口写 path，内部方法写类名.方法名。
+| 数据/实体/协议 | 读写方式 | 用途 | 位置 | Evidence ID |
+|----------------|----------|------|------|-------------|
+| `{Type/Table/Message}` | Read / Write / Publish / Subscribe | {purpose} | `{path}` | M-002 |
 
-## 数据模型
-
-| 实体/表名 | 用途 | 关键字段 |
-|-----------|------|----------|
-| `{EntityName}` | {用途} | `{id}`, `{name}`, `{status}` |
-
-> 列出模块核心的领域实体或数据库表。无需画 ER 图，用表格说明即可。
-
-## 类图
+## L1 核心构件图
 
 ```mermaid
-classDiagram
-    class ExampleService {
-        +methodA(param)
-        +methodB(param)
-    }
-    class ExampleRepository {
-        +findById(id)
-        +save(entity)
-    }
-    ExampleService --> ExampleRepository
+flowchart LR
+    ENTRY[业务入口<br/>{EntrySymbol}] -->|调用 M-003| ORCH[业务编排<br/>{OrchestratorSymbol}]
+    ORCH -->|读取 M-004| MODEL[状态模型<br/>{ModelSymbol}]
+    ORCH -->|调用 M-005| OUT[外部边界<br/>{PortSymbol}]
 ```
 
-> 类图只包含模块内核心类（≤10 个），省略工具类、DTO、常量类。标注类之间的关键关系（继承、实现、依赖）。
+### 图例
 
-## 时序图：{模块内核心场景}
+- 实线：Verified
+- 虚线：Graph-Heuristic / Inferred
+- 点线到“待确认”：Unknown
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant Service as ExampleService
-    participant Repo as ExampleRepository
-    Client->>Service: callMethod(params)
-    Service->>Repo: findById(id)
-    Repo-->>Service: Entity
-    Service-->>Client: Result
-```
+> 每张 L1 图 ≤25 个工程构件。节点名称使用“工程职责 + 代码符号”，省略工具类、DTO 和简单包装器。
 
-> **只画 1 个最核心场景，且调用链应限制在本模块内部**。其他场景在「其他场景」段落用文字描述，不画时序图。
+## 核心构件目录
 
-## 跨模块场景
+| 工程职责 | 代码符号 | 类型 | 源码位置 | 模块归属 | Evidence ID |
+|----------|----------|------|----------|----------|-------------|
+| {responsibility} | `{Symbol}` | Entry / Orchestrator / Model / Repository / Adapter / External | `{path:line}` | {module} | M-006 |
 
-```mermaid
-sequenceDiagram
-    participant Ext as 外部调用方
-    participant Svc as 本模块 Service
-    participant M2 as 模块 B Client
-    participant M3 as 模块 C
-    Ext->>Svc: entryMethod(params)
-    Svc->>M2: callModuleB(data)
-    M2->>M3: process(data)
-    M3-->>M2: result
-    M2-->>Svc: result
-    Svc-->>Ext: finalResult
-```
+## 跨模块关系
 
-> **当最核心场景必须跨模块协作时，将跨模块时序图画在此节**，而非「模块内核心场景」中。本节的调用链可跨越模块边界。
+| 方向 | 对方模块 | 关系/协议 | 用途 | Evidence ID |
+|------|----------|-----------|------|-------------|
+| 入站/出站 | {module} | Direct / REST / gRPC / Event / Data | {purpose} | M-007 |
 
-## 其他场景
+## 关键业务场景
 
-- **场景 B**：{描述} → 涉及的类：{ClassA}、{ClassB}
-- **场景 C**：{描述} → 涉及的类：{ClassC}
+| 业务流 | 入口 | 结果/副作用 | L2 文档 | Evidence ID |
+|--------|------|-------------|---------|-------------|
+| {flow-name} | `{entry}` | {result} | [flow.md](flows/{flow-name}.md) | M-008 |
 
-## 模块交互
+> 没有独立业务流时写“本模块无独立业务流”，不要创建空 `flows/`。
 
-```mermaid
-graph LR
-    A[本模块] -->|REST API| B[模块 B]
-    A -->|消息队列| C[模块 C]
-    A -->|gRPC| D[模块 D]
-```
+## 配置与运行时装配
 
-> 标注调用方向（同步/异步）、通信协议（REST/gRPC/消息队列/Direct Call）。
-> **本图应与 project.md 的「架构概览」保持一致**。
+| 配置/机制 | 默认/绑定 | 用途 | 证据状态 | Evidence ID |
+|-----------|-----------|------|----------|-------------|
+| `{config / DI / signal-slot}` | {value/binding} | {purpose} | Verified / Unknown | M-009 |
 
-## 配置项
+## L3 证据
 
-| 配置项 | 默认值 | 说明 |
-|--------|--------|------|
-| `{config.key}` | `{default}` | {说明} |
+| Evidence ID | 事实/关系 | 来源 | 定位 | 证据状态 | 置信度 | 备注 |
+|-------------|-----------|------|------|----------|--------|------|
+| M-001 | {fact} | CodeGraph / Source / Config | `{path:line or symbol}` | Verified | High | caller→callee |
 
-> 模块级别的特殊配置（feature flag、阈值、超时等）。通用配置无需列出。
+## 已知盲区
 
-## 业务流索引
+| 盲区 | 影响的构件/关系 | 当前状态 | 补证方法 |
+|------|-----------------|----------|----------|
+| {dynamic mechanism} | {M-xxx / symbol} | Unknown | {targeted source/runtime/manual check} |
 
-| 业务流 | 设计文档 | 描述 |
-|--------|----------|------|
-| {flow-name} | [flows/{flow-name}.md](flows/{flow-name}.md) | {一句话描述} |
+## 与 L0 的一致性
 
-> 每个业务流对应一个 flow.md。业务流是模块内相对独立的业务流程，不是任意一个方法调用。
-> 若模块无独立业务流，写「本模块无独立业务流」并删除下方 flows/ 目录。
+- L0 对本模块的职责描述：{description}
+- 已验证的跨模块边：{edges}
+- 需要修正 L0 的证据：{none or evidence}
