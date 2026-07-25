@@ -233,9 +233,20 @@ Kilo 从 OpenCode staging 派生：
 
 ## 9. CodeGraph 内网升级
 
+已确认内网目标环境：
+
+| 属性 | 值 |
+|------|----|
+| 操作系统 | Ubuntu 22.04 |
+| CPU 架构 | `x86_64` |
+| CodeGraph 目标版本 | `1.5.0` |
+| 官方资产 | `codegraph-linux-x64.tar.gz` |
+
+不得下载或交付 `codegraph-linux-arm64.tar.gz`。
+
 交付 Linux 离线安装包，至少包含：
 
-- CodeGraph 1.5.0 Linux 运行包；先以 `uname -m` 确认架构，`x86_64` 使用 Linux x64 包，`aarch64` 使用 Linux ARM64 包。
+- CodeGraph 1.5.0 Linux x64 运行包。
 - 安装和回滚说明。
 - SHA-256 校验文件。
 - 0.2.5 索引迁移检查表。

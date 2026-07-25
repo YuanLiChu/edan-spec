@@ -8,6 +8,8 @@
 
 **Tech Stack:** Markdown Skills and Agent instructions, Python 3 standard library, `unittest`, Git CLI, CodeGraph 1.5.0 CLI, deterministic ZIP/tar verification.
 
+**Confirmed Intranet Target:** Ubuntu 22.04 on `x86_64`; download only the official `codegraph-linux-x64.tar.gz` asset. Reject ARM64 assets.
+
 ---
 
 ## File Map
@@ -732,6 +734,8 @@ Expected: import fails because the builder does not exist.
 `build_codegraph_offline.py` must:
 
 - Accept `--version 1.5.0`, `--target linux-x64|linux-arm64`, and `--output-dir`.
+- Build this delivery with `--target linux-x64`; the confirmed intranet target is Ubuntu 22.04 `x86_64`.
+- Reject an asset whose filename is not exactly `codegraph-linux-x64.tar.gz` for this delivery.
 - Default release URLs to:
 
 ```text
