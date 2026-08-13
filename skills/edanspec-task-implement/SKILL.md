@@ -3,7 +3,7 @@ name: edanspec-task-implement
 description: 依据任务文档执行代码实现。增量式开发 + 测试驱动（TDD），每个增量独立验证后原子提交。触发场景：用户要求开始实现功能或修复 bug、按任务计划执行、继续上次工作。不适用于纯配置变更、文档更新、简单重命名。
 ---
 
-<!-- SCRIPTS: scripts/（相对本 SKILL.md 所在目录），正文中统一用 {{SCRIPTS}} 引用 -->
+<!-- SCRIPTS: scripts/（相对本 SKILL.md 所在目录）。脚本双版本：.py（Python 3.7+，优先）与 .cjs（Node.js，无 Python 时），行为一致。正文用 {{SCRIPTS}} 引用 -->
 
 # 任务实现
 

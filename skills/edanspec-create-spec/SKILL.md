@@ -3,7 +3,7 @@ name: edanspec-create-spec
 description: 为需求创建或更新方案文档（proposal + spec + design）。**触发场景：** 新功能、"做一个XX"、"加个XX"、"继续上次"、"方案调整"、"需求变了"。**不适用：** 一行修复、拼写错误、纯调研。需求简单也建议用——先花 5 分钟确认范围和验收标准，比写完后发现理解偏差返工几小时划算。
 ---
 
-<!-- SCRIPTS: scripts/（相对本 SKILL.md 所在目录），正文中统一用 {{SCRIPTS}} 引用 -->
+<!-- SCRIPTS: scripts/（相对本 SKILL.md 所在目录）。脚本双版本：.py（Python 3.7+，优先）与 .cjs（Node.js，无 Python 时），行为一致。正文用 {{SCRIPTS}} 引用 -->
 
 # Create Spec
 

@@ -3,7 +3,7 @@ name: edanspec-archive
 description: 归档已完成的 feature——引导验证（可选）、delta spec 合并、移动到归档目录。触发场景：feature 完成准备归档、用户说「归档这个」「看看能归档哪些」「归档」。不适用于未完成或有 CRITICAL 问题的 feature。
 ---
 
-<!-- SCRIPTS: ../edanspec-task-implement/scripts/（相对本 SKILL.md 所在目录，跨技能引用），正文用 {{TASK_SCRIPTS}} 表示 -->
+<!-- SCRIPTS: ../edanspec-task-implement/scripts/（相对本 SKILL.md 所在目录，跨技能引用）。脚本双版本 .py（优先）/ .cjs（Node，无 Python 时），行为一致。正文用 {{TASK_SCRIPTS}} 表示 -->
 
 # Feature 归档
 
