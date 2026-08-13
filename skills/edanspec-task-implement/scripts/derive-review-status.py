@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 # derive-review-status.py — 从审查报告文件推导审查状态
 # 跨平台：macOS / Windows / Linux
 # 用法:

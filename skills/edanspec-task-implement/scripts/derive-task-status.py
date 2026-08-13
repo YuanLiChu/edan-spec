@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 # derive-task-status.py — 从文件系统事实推导 taskGraph 状态
 # 跨平台：macOS / Windows / Linux
 # 用法:
