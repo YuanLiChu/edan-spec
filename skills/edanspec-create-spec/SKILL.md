@@ -3,7 +3,7 @@ name: edanspec-create-spec
 description: 为需求创建或更新方案文档（proposal + spec + design）。**触发场景：** 新功能、"做一个XX"、"加个XX"、"继续上次"、"方案调整"、"需求变了"。**不适用：** 一行修复、拼写错误、纯调研。需求简单也建议用——先花 5 分钟确认范围和验收标准，比写完后发现理解偏差返工几小时划算。
 ---
 
-<!-- SCRIPTS: .opencode/skills/create-spec/scripts/ — 正文中统一用 {{SCRIPTS}} 引用 -->
+<!-- SCRIPTS: scripts/（相对本 SKILL.md 所在目录），正文中统一用 {{SCRIPTS}} 引用 -->
 
 # Create Spec
 
@@ -44,9 +44,12 @@ EdanSpec/feature/{timestamp}-{topic}/
 ├── specs/                 # 需求规格（验收条件）
 │   └── {capability}-spec.md
 ├── design.md              # 技术设计（实现方案）
+├── tasks.md               # 任务清单（task-plan 阶段生成，checkbox 进度唯一来源）
 ├── review/                # 正式评审产物（可选）
 └── status.json            # 元数据（state / conflicts）
 ```
+
+一个变更 = 一个目录：feature 目录聚合本次变更的全部交付物，贯穿整个生命周期——方案（本技能）→ 任务（task-plan）→ 实现与审查（task-implement）→ 归档（archive）。
 
 产物状态（proposal/specs/design 是否完成）从文件系统事实推导，不写入 status.json。运行脚本 `{{SCRIPTS}}/derive-artifact-status.py` 获取。
 
@@ -64,10 +67,13 @@ EdanSpec/feature/{timestamp}-{topic}/
 
 ## 恢复流程
 
+从文件系统事实恢复上下文，不依赖会话记忆。
+
 1. 运行 `{{SCRIPTS}}/derive-artifact-status.py <feature-dir>` 获取各 artifact 状态
 2. 找到第一个 `ready` 的 artifact → 从它开始继续
 3. 全部 done → 方案已完成，引导进入 task-plan
 4. 全部 pending → 从零开始
+5. 无活跃 feature → 进入正常流程（新建）
 
 ## 变更流程
 

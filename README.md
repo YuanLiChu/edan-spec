@@ -332,13 +332,9 @@ EdanSpec/                        # 运行时根目录（由 skill 自动创建�
 - Java 规范：[rules/java/coding-style.md](rules/java/coding-style.md)
 - Kotlin 规范：[rules/kotlin/coding-style.md](rules/kotlin/coding-style.md)
 
-## 测试覆盖率基线
+## 测试与质量
 
-| 指标 | 基线 |
-|------|------|
-| 行覆盖率 | ≥ 80% |
-| 分支覆盖率 | ≥ 70% |
-| 主要路径 | 100% |
+测试与质量规范（覆盖率工具配置、基线标准、TDD 编写原则、覆盖场景）在 [edanspec-task-implement](skills/edanspec-task-implement/SKILL.md) 技能中定义，实现阶段按技能加载。
 
 ## 变更管理
 

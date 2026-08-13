@@ -3,7 +3,7 @@ name: edanspec-task-implement
 description: 依据任务文档执行代码实现。增量式开发 + 测试驱动（TDD），每个增量独立验证后原子提交。触发场景：用户要求开始实现功能或修复 bug、按任务计划执行、继续上次工作。不适用于纯配置变更、文档更新、简单重命名。
 ---
 
-<!-- SCRIPTS: .opencode/skills/task-implement/scripts/ — 正文中统一用 {{SCRIPTS}} 引用 -->
+<!-- SCRIPTS: scripts/（相对本 SKILL.md 所在目录），正文中统一用 {{SCRIPTS}} 引用 -->
 
 # 任务实现
 
@@ -127,6 +127,14 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 ### 检测环境
 
 确定测试、构建、lint 命令。详见 `references/environment-detection.md`。后续所有增量统一使用这组命令。
+
+**同时确认覆盖率工具已就绪，未就绪不得开始编写测试：**
+
+| 场景 | 操作 |
+|------|------|
+| 全新项目初始化 | 初始化工程时同步配置覆盖率工具（如 JaCoCo、pytest-cov、Vitest coverage），不得留到后面补 |
+| 已有项目 | 检查是否已配置覆盖率工具；未配置则在 `tasks.md` 中增加「配置覆盖率工具」任务，编码前先完成 |
+| 覆盖率报告 | 必须能在构建或测试命令中一键生成，见 `references/coverage-check.md` |
 
 ### 加载规范
 
