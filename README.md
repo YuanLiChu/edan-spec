@@ -62,7 +62,7 @@ EdanSpec 的目标可以概括为三个关键词：**可控、可验证、可追
     ├── edanspec-debugging/      # 调试排障（五步流程）
     ├── edanspec-code-review/    # 代码审查（四维度评估，含 reviewer-agent.md）
     ├── edanspec-security-review/# 安全审查（五维度检查，含 security-reviewer-agent.md）
-    ├── edanspec-verify/         # 结构化验证（三维度验收，含 verify-agent.md）
+    ├── edanspec-verify/         # 结构化验证（三维度验收，含 verifier-agent.md）
     └── edanspec-archive/        # 归档（delta spec 合并 + 文件移动）
 ```
 
