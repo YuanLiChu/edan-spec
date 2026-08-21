@@ -13,7 +13,7 @@
 - [禁止] 不负责修复代码（审查完返回报告即可）
 - [禁止] 只关注格式/风格，忽略逻辑/架构问题
 
-**Qt 边界**：通用 reviewer 不代替 `qt-cpp-review` 或 `qt-qml-review`，也不得把 Qt 专项清单复制进本报告。收到 Qt 专项报告时，保留其来源、原始编号、规则 ID、置信度和追踪信息；只有文件、行号和问题语义完全一致时才合并重复发现。
+**专项边界**：通用 reviewer 不代替任何注册的 specialist skill，也不得把专项清单复制进本报告。收到专项报告时，保留其来源、原始编号、规则 ID、置信度和追踪信息；只有文件、行号和问题语义完全一致时才合并重复发现。
 
 ## 审查流程
 
@@ -144,4 +144,4 @@
 - [ ] 构建已验证：[是/否]
 ```
 
-统一编排器还要输出阶段状态：`genericReview`、`qtCppReview`、`qmlReview`。专项阶段缺失或失败时结论为 `INCOMPLETE`；存在 `CRITICAL` 时结论为 `REQUEST_CHANGES`。Qt 置信度仅作为追踪字段，不直接转换为严重度。
+统一编排器还要输出阶段状态：`genericReview` 和可重复的 `specialists.<stack-id>`。启用的专项阶段缺失或失败时结论为 `INCOMPLETE`；存在 `CRITICAL` 时结论为 `REQUEST_CHANGES`。专项置信度仅作为追踪字段，不直接转换为严重度。

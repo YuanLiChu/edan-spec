@@ -13,10 +13,9 @@
 | 阶段 | 状态 | 文件范围/备注 |
 |------|------|---------------|
 | 通用四维审查 `genericReview` | complete / failed | |
-| Qt C++ `qtCppReview` | complete / partial / failed / not-applicable | |
-| Qt QML `qmlReview` | complete / partial / failed / not-applicable | |
+| 专项 `specialists.<stack-id>` | complete / partial / failed / not-applicable | |
 
-Qt 专项原始报告（如有）应分别保留为 `qt-cpp-review-report.md` 和 `qt-qml-review-report.md`。统一问题项保留来源、Qt 原始编号、规则 ID、置信度和追踪信息；仅对文件、行号和语义完全一致的问题去重。
+专项原始报告按注册项或专项 skill 声明的路径保留。统一问题项保留来源、原始编号、规则 ID、置信度和追踪信息；仅对文件、行号和语义完全一致的问题去重。
 
 ---
 
@@ -79,7 +78,7 @@ Qt 专项原始报告（如有）应分别保留为 `qt-cpp-review-report.md` �
 
 ## 待人工确认
 
-> Qt 专项报告中的 investigation target 放在此处，不凭置信度直接升级为 CRITICAL。
+> 专项报告中的 investigation target 放在此处，不凭置信度直接升级为 CRITICAL。
 
 ---
 

@@ -9,42 +9,29 @@ description: 合并前四维度审查（正确性、可读性、架构、性能�
 
 > **职责分工**：本 skill 负责流程编排（确定范围 → 启动审查 → 处理结果）。审查维度定义、检查项细则、输出格式以 `reviewer-agent.md` 为准。
 
-## Qt 专项自动路由
+## 技术栈专项自动路由
 
-`edanspec-code-review` 是统一入口。通用四维审查始终执行；确定实际文件集后，按以下规则自动调用仓库内的 Qt 6 专项 skill：
+`edanspec-code-review` 是通用入口。通用四维审查始终执行；技术栈专项能力由被审查项目的 `.edan-dev/review-stack.yaml` 注册表配置。
 
 1. 固化本次审查的 `allFiles`（diff、commit 或目录范围），不得让后续 reviewer 自行扩大范围。
-2. 使用仓库内脚本生成一次分类结果：
+2. 读取 `.edan-dev/review-stack.yaml`：
+   - 文件不存在时只执行通用审查，`specialists` 为空；
+   - 配置格式错误时记录 `specialistConfig: invalid`，继续通用审查，但最终结论不得为 `APPROVE`；
+   - 只处理 `enabled: true` 的注册项。
+3. 对每个注册项按 `match.extensions`、`match.content_any` 和 `match.build_any` 计算 `matchedFiles`。匹配必须基于固化的 `allFiles`，不得扫描范围外文件。
+4. 通用 reviewer 始终接收 `allFiles`。每个专项 skill 只接收自己的 `matchedFiles`、注册项中的 `guidance` 文件和审查语义。
+5. 专项 skill 自己负责确定性 lint、深度分析、专项报告和专项规则；通用入口不得复制任何技术栈的检查清单或阶段细节。专项 skill 不可用、执行失败或报告无法生成时，对应 `specialists.<stack-id>` 为 `failed`。
+6. 统一报告使用可扩展状态：`genericReview` 和 `specialists.<stack-id>`。状态为 `complete`、`partial`、`failed` 或 `not-applicable`；专项原始报告路径和来源由注册项或专项 skill 自己声明。
 
-   ```text
-   python skills/edanspec-code-review/scripts/classify_qt_scope.py --json <allFiles...>
-   ```
+专项配置只描述路由和项目级补充说明，不把规则正文写进 YAML。可复用的技术栈规则放在对应 skill 的 `references/`；项目或团队特有经验通过 `guidance` 传入。
 
-   分类结果包含 `allFiles`、`qtCppFiles`、`qmlFiles` 和逐文件 `evidence`，后续阶段必须复用该结果。
-3. `qmlFiles` 非空时，调用 `qt-qml-review`，只传入 `qmlFiles`；`.qml` 与 `.qmltypes` 均属于 QML 范围。
-4. `qtCppFiles` 非空时，调用 `qt-cpp-review`，只传入 `qtCppFiles`。普通 C++ 没有明确 Qt 证据时不得调用该 skill。
-5. 同时存在两组文件时，两个专项阶段可以并行，但通用 reviewer 仍必须执行。每个专项 skill 必须保留其原有确定性 lint、可用的系统工具和六个深度分析阶段；不得把 Qt 规则复制进通用 reviewer。
+## 统一结论
 
-Qt/C++ 的明确证据包括 Qt 头文件、Qt 类型、`Q_OBJECT`/`Q_PROPERTY` 等宏、signal/slot/emit 构造，或引用该源文件的 `find_package(Qt6 ...)`、`qt_add_executable`、`qt_add_qml_module` 等构建声明。检测到 `qt-cpp-review` 的 framework/module 信号时，只提出启用 framework 模式的建议，不得自动启用。
-
-## 专项报告与统一结论
-
-在 feature 目录（优先 `.edan-dev/feature/<name>`，兼容旧的 `EdanSpec/feature/<name>`）中保留：
-
-- `qt-cpp-review-report.md`（仅在 Qt/C++ 阶段触发时生成）；
-- `qt-qml-review-report.md`（仅在 QML 阶段触发时生成）；
-- `code-review-report.md`（通用与专项结果的统一报告）。
-
-统一报告必须记录三个阶段状态：`genericReview`、`qtCppReview`、`qmlReview`，状态可为 `complete`、`partial`、`failed` 或 `not-applicable`。按文件、行号和问题语义完全一致才去重；Qt 原始编号、规则 ID、置信度和来源必须保留，Qt 置信度不得直接映射为 EdanSpec 严重度。
-
-结论矩阵如下：
-
-- 存在确认的 `CRITICAL`：`REQUEST_CHANGES`；若专项同时未完成，完整性仍标记为不完整。
+- 存在确认的 `CRITICAL`：`REQUEST_CHANGES`。
 - 所有必要阶段完成且没有 `CRITICAL`：`APPROVE`。
-- 任一必要阶段缺失、失败、报告无法解析或 Python lint 未运行：`INCOMPLETE`，不得报告为 `APPROVE`。
-- Qt 报告中的 investigation target 进入统一报告的“待人工确认”章节，不单独升级为 `CRITICAL`。
-
-不含 Qt/C++ 或 QML 文件时，不调用专项 skill，也不生成 Qt 专项报告。
+- 配置错误、启用的专项缺失/失败、报告无法解析或必要 lint 未运行：`INCOMPLETE`，不得报告为 `APPROVE`。
+- 专项报告中的 investigation target 进入统一报告的“待人工确认”章节，不单独升级为 `CRITICAL`。
+- 没有注册表或没有匹配到专项文件时，不生成专项报告；这不是失败，而是 `not-applicable`。
 
 ## 流程
 

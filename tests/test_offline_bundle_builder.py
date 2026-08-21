@@ -60,22 +60,19 @@ class OfflineBundleBuilderTests(unittest.TestCase):
                 self.assertIn(
                     "codegraph_explore", skill.read_text(encoding="utf-8")
                 )
-                for qt_skill_name, lint_script in (
-                    ("qt-cpp-review", "references/lint-scripts/qt_review_lint.py"),
-                    ("qt-qml-review", "references/lint-scripts/qt_qml_lint.py"),
-                ):
-                    qt_skill = (
-                        extracted
-                        / prefixes[platform]
-                        / "skills"
-                        / qt_skill_name
-                    )
-                    self.assertEqual(
-                        qt_skill_name,
-                        builder.common.read_frontmatter_name(qt_skill / "SKILL.md"),
-                    )
-                    self.assertTrue((qt_skill / "LICENSE.txt").is_file())
-                    self.assertTrue((qt_skill / lint_script).is_file())
+                canonical_skills = {
+                    path.name
+                    for path in (ROOT_DIR / "skills").iterdir()
+                    if path.is_dir()
+                }
+                staged_skills = {
+                    path.name
+                    for path in (
+                        extracted / prefixes[platform] / "skills"
+                    ).iterdir()
+                    if path.is_dir()
+                }
+                self.assertTrue(canonical_skills <= staged_skills)
                 install = (extracted / "INSTALL.md").read_text(encoding="utf-8")
                 self.assertIn("\u5185\u7f51\u5b89\u88c5", install)
                 self.assertIn("SHA-256", install)

@@ -251,7 +251,7 @@ Agent 会扫描 `EdanSpec/feature/` 目录，找到 `tasks.md` 中未勾选的�
 
 ```
 /edanspec-code-review           →  正确性、可读性、架构、性能
-# 含 Qt 6 C++ 或 QML 时，自动追加 qt-cpp-review / qt-qml-review 专项审查
+# 读取 .edan-dev/review-stack.yaml，按项目配置追加技术栈专项审查
 /edanspec-security-review       →  输入验证、认证授权、数据保护、机密管理、依赖安全
 /edanspec-verify                →  完整性、正确性、一致性验收
 ```
@@ -269,7 +269,7 @@ Agent 会扫描 `EdanSpec/feature/` 目录，找到 `tasks.md` 中未勾选的�
 | **任务规划** | `task-plan` | 按完整功能拆分需求，生成验收标准、验证步骤、工时估算、依赖关系 |
 | **任务实现** | `task-implement` | TDD 循环（RED→GREEN→REFACTOR），每个增量独立验证后原子提交，遵循规范体系 |
 | **调试排障** | `debugging` | 观察→复现→定位→修复→验证，五步流程，不盲目改代码 |
-| **代码审查** | `code-review` | 四维度评估；检测到 Qt 6 C++ / QML 时自动路由到 `qt-cpp-review` / `qt-qml-review` |
+| **代码审查** | `code-review` | 四维度评估；按 `.edan-dev/review-stack.yaml` 路由可配置的技术栈专项走读 |
 | **安全审查** | `security-review` | 五维度检查：输入验证、认证/授权、数据保护、机密管理、依赖安全 |
 | **结构化验证** | `verify` | 三维度验收：完整性、正确性、一致性，归档前最终关卡 |
 | **归档** | `archive` | delta spec 合并到主规范，feature 移至归档目录 |

@@ -25,6 +25,12 @@ A structured, read-only code review skill for Qt6 QML code that
 combines deterministic linting with parallel agent-driven deep
 analysis across six focused domains.
 
+When invoked by `edanspec-code-review`, read
+`references/review-workflow.md` and any project `guidance` files
+first. The caller-provided file list is authoritative; never widen
+the scope. Record reusable project findings in
+`references/lessons-learned.md` only after evidence is available.
+
 ## When to use this skill
 
 - When the user mentions review-related tasks: "review", "check",
