@@ -30,6 +30,20 @@ class BuildOutput(NamedTuple):
     sha256sums: Path
 
 
+QT_SKILL_FILES = {
+    "qt-cpp-review": (
+        "references/qt-deprecated-classes.md",
+        "references/qt-framework-checklist.md",
+        "references/qt-review-checklist.md",
+        "references/lint-scripts/qt_review_lint.py",
+    ),
+    "qt-qml-review": (
+        "references/qt-qml-review-checklist.md",
+        "references/lint-scripts/qt_qml_lint.py",
+    ),
+}
+
+
 def copy_platform_tree(
     source: Path,
     destination: Path,
@@ -139,6 +153,8 @@ def install_text(platform: str, prefix: str, date_tag: str) -> str:
         f"2. Back up the existing `{prefix}/` directory in the target project.\n"
         f"3. Extract `{archive}` directly into the target project root.\n"
         f"4. Confirm `{prefix}/skills/project-context/SKILL.md` exists.\n"
+        f"   Qt projects also require `{prefix}/skills/qt-cpp-review/` and "
+        f"`{prefix}/skills/qt-qml-review/`.\n"
         f"5. Restart {display} and run `{verify}`.\n\n"
         "PowerShell:\n\n"
         "```powershell\n"
@@ -162,6 +178,26 @@ def validate_stage(stage: Path, *, platform: str, prefix: str) -> None:
         raise common.DerivationError(f"missing project-context skill: {skill}")
     if "codegraph_explore" not in skill.read_text(encoding="utf-8"):
         raise common.DerivationError(f"stale project-context skill: {skill}")
+    for skill_name, references in QT_SKILL_FILES.items():
+        qt_skill = stage / prefix / "skills" / skill_name
+        entry = qt_skill / "SKILL.md"
+        license_file = qt_skill / "LICENSE.txt"
+        if not entry.is_file():
+            raise common.DerivationError(f"missing Qt skill entry: {entry}")
+        if common.read_frontmatter_name(entry) != skill_name:
+            raise common.DerivationError(
+                f"Qt skill name does not match directory: {entry}"
+            )
+        if not license_file.is_file() or "BSD 3-Clause License" not in license_file.read_text(
+            encoding="utf-8"
+        ):
+            raise common.DerivationError(f"missing Qt skill license: {license_file}")
+        for relative in references:
+            required = qt_skill / relative
+            if not required.is_file():
+                raise common.DerivationError(
+                    f"Qt skill {skill_name} is missing {relative}"
+                )
     if platform == "claudecode":
         return
     for skill_file in (stage / prefix / "skills").glob("*/SKILL.md"):

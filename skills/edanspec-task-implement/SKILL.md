@@ -300,6 +300,8 @@ python {{SCRIPTS}}/derive-review-status.py EdanSpec/feature/<name>
 - **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后删除 `code-review-report.md`，重新执行 code-review
 - **无 CRITICAL** → 报告写入 `code-review-report.md`，继续下一阶段
 
+> `INCOMPLETE` 表示必要的通用或专项审查阶段未完成，即使没有 CRITICAL，也必须视为未通过并在恢复时继续执行。
+
 ### 6.3 执行 security-review
 
 调用 `edanspec-security-review` 对当前 feature 的代码变更进行五维度安全审查。审查完成后报告必须写入 `{feature-dir}/security-review-report.md`。
