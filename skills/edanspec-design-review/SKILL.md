@@ -1,13 +1,13 @@
 ---
 name: edanspec-design-review
-description: 复杂功能的正式评审流程——八章方案文档 + 八章详细设计。触发场景：用户明确说「出方案」「详细设计」「架构评审」「design review」。日常功能用 edanspec-create-spec 即可。前置条件：feature 下已有 proposal + spec + design 产物（由 create-spec 生成）。
+description: 复杂功能的正式评审流程——九章方案设计评审文档 + 八章详细设计。触发场景：用户明确说「出方案」「方案设计」「详细设计」「架构评审」「design review」或要求基于需求文档输出正式方案。日常功能用 edanspec-create-spec 即可。前置条件：feature 下已有 proposal + spec + design 产物（由 create-spec 生成）。
 ---
 
 <!-- SCRIPTS: scripts/（相对本 SKILL.md 所在目录），正文中统一用 {{SCRIPTS}} 引用 -->
 
 # 设计评审（复杂评审）
 
-> **日常功能用 `edanspec-create-spec` 就够了。** 本 skill 用于大功能/架构变更的正式评审——产出八章方案文档 + 八章详细设计。
+> **日常功能用 `edanspec-create-spec` 就够了。** 本 skill 用于大功能/架构变更的正式评审——产出九章方案设计评审文档 + 八章详细设计。
 
 在写代码之前，把需求变成重量级的结构化技术文档。
 
@@ -21,7 +21,7 @@ description: 复杂功能的正式评审流程——八章方案文档 + 八章�
     基于产物生成方案文档 → 基于方案生成详细设计 → Word 导出（可选）
 ```
 
-**上下文管理**：按阶段加载，只读当前需要的内容；每章写完立即保存。详见 `AGENT.md` 中的「上下文管理」章节。
+**上下文管理**：按阶段加载，只读当前需要的内容；每章写完立即保存。详见 `AGENTS.md` 中的「上下文管理」章节。
 
 ---
 
@@ -55,7 +55,7 @@ description: 复杂功能的正式评审流程——八章方案文档 + 八章�
 
 基于产物文档（proposal + spec + design），生成高层架构设计评审文档。
 
-- **模板**：`templates/design-review-template.md`（八章，模块级架构）
+- **模板**：`templates/design-review-template.md`（九章，需求到方案的正式评审结构）
 - **输出**：`EdanSpec/feature/<name>/review/solution.md`
 - **逐章生成**：读一章 → 写一章 → 保存 → 展示摘要 → 用户确认 → 下一章
 - **禁止多章批量生成**——上下文膨胀，质量跳水
@@ -102,12 +102,12 @@ python3 {{SCRIPTS}}/generate_docx.py EdanSpec/feature/<name>/review/solution-ima
 2. **阶段一必须交互**——技术决策不得自行判断
 3. **写完一章立即保存**——不攒到后面
 4. **确认时只展示标题和要点**——全文用户按需查看
-5. **模板不增删**——结构已验证
+5. **一级章节不增删**——九章结构来自正式方案设计评审样例；模块和业务流子章节按实际数量重复
 6. **Markdown 为主**——Word 仅供评审
 
 ## 常见误区与反驳
 
-> 通用误区见 `AGENT.md`。
+> 通用误区见 `AGENTS.md`。
 
 | 说辞 | 真相 |
 |------|------|
@@ -121,7 +121,7 @@ python3 {{SCRIPTS}}/generate_docx.py EdanSpec/feature/<name>/review/solution-ima
 |------|----------|
 | 阶段零 | 未读 `status.json` 就跳过上下文检测；未检测产物就直接生成方案；产物缺失不提示先执行 create-spec |
 | 阶段一/二 | 多章一次性生成；章节写完未保存；随意增删模板章节 |
-| 通用 | 方案文档缺少模块设计的七个子章节 |
+| 通用 | 方案文档缺少协议解读、模块整体业务流、职责分配、原始/扩展类图、关键业务流或横切评审项 |
 
 ## 验证
 
@@ -130,7 +130,7 @@ python3 {{SCRIPTS}}/generate_docx.py EdanSpec/feature/<name>/review/solution-ima
 - [ ] feature已创建
 - [ ] 已有产物（proposal + spec + design），否则提示用户先执行 create-spec
 - [ ] 技术选型已逐项确认并记录
-- [ ] 方案文档已生成且包含完整章节
+- [ ] 方案文档已生成且包含九个一级章节；不涉及章节已写明理由
 - [ ] 详细设计已生成且包含核心类/接口设计
 - [ ] 用户已确认方案和设计内容
 
