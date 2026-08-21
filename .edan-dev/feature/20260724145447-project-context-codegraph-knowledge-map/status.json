@@ -1,0 +1,46 @@
+{
+  "name": "project-context-codegraph-knowledge-map",
+  "created": "2026-07-24T14:54:47+08:00",
+  "base_commit": "048648bcd2026ca3af7acac122fed32673b90717",
+  "state": "active",
+  "artifactGraph": [
+    {
+      "id": "proposal",
+      "file": "proposal.md",
+      "status": "done",
+      "dependsOn": [],
+      "lastModified": "2026-07-24T14:54:47+08:00"
+    },
+    {
+      "id": "specs",
+      "file": "specs/",
+      "status": "done",
+      "dependsOn": [
+        "proposal"
+      ],
+      "items": [
+        "project-context-codegraph"
+      ],
+      "lastModified": "2026-07-24T14:54:47+08:00"
+    },
+    {
+      "id": "design",
+      "file": "design.md",
+      "status": "done",
+      "dependsOn": [
+        "proposal"
+      ],
+      "lastModified": "2026-07-24T14:54:47+08:00"
+    }
+  ],
+  "artifacts": {
+    "proposal": true,
+    "specs": [
+      "project-context-codegraph"
+    ],
+    "design": true,
+    "tasks": true
+  },
+  "conflicts": [],
+  "review_skipped": false
+}

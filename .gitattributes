@@ -1,0 +1,2 @@
+# Windows 批处理脚本强制 CRLF，确保 cmd.exe 正确解析（goto / if 块依赖行尾）
+*.bat text eol=crlf

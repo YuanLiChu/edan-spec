@@ -1,0 +1,38 @@
+{
+  "name": "qt-review-skill-integration",
+  "created": "2026-08-13T13:41:42+08:00",
+  "base_commit": "ea01b2f0bdc56e371b105627ed4d08b398e9b041",
+  "state": "active",
+  "artifactGraph": [
+    {
+      "id": "proposal",
+      "file": "proposal.md",
+      "status": "done",
+      "dependsOn": [],
+      "lastModified": "2026-08-13T13:58:12+08:00"
+    },
+    {
+      "id": "specs",
+      "file": "specs/",
+      "status": "done",
+      "dependsOn": ["proposal"],
+      "items": ["qt-review-integration"],
+      "lastModified": "2026-08-13T13:58:12+08:00"
+    },
+    {
+      "id": "design",
+      "file": "design.md",
+      "status": "done",
+      "dependsOn": ["proposal"],
+      "lastModified": "2026-08-13T13:58:12+08:00"
+    }
+  ],
+  "artifacts": {
+    "proposal": true,
+    "specs": ["qt-review-integration"],
+    "design": true,
+    "tasks": false
+  },
+  "conflicts": [],
+  "review_skipped": false
+}

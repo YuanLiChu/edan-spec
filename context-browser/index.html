@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Project Context Browser</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="vendor/mermaid.min.js"></script>
+  <script>
+    if (typeof mermaid !== 'undefined') {
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    }
+  </script>
+</head>
+<body>
+  <header class="app-header">
+    <div>
+      <span class="eyebrow">Project Context Browser</span>
+      <h1 id="project-title">选择一个 context 文件夹</h1>
+    </div>
+    <div class="header-actions">
+      <input id="search" type="search" placeholder="搜索项目、模块、业务流..." aria-label="搜索" disabled>
+      <button id="pick-folder" type="button">添加文件夹</button>
+      <label class="fallback-picker">
+        <span>兼容选择</span>
+        <input id="folder-input" type="file" webkitdirectory multiple>
+      </label>
+    </div>
+  </header>
+
+  <main class="layout">
+    <nav aria-label="文档树">
+      <div class="panel-title">文档层级</div>
+      <div id="tree" class="tree"></div>
+    </nav>
+    <article>
+      <div id="breadcrumbs" class="breadcrumbs"></div>
+      <section id="reader" class="reader">
+        <div class="welcome">
+          <h2>添加文件夹后开始浏览</h2>
+          <p>选择包含 <code>project.md</code>、<code>modules/*/module.md</code> 和 <code>modules/*/flows/*.md</code> 的文件夹。也支持更宽松的 <code>project.md</code>、<code>module.md</code>、<code>flow*.md</code> 文件命名。</p>
+        </div>
+      </section>
+    </article>
+    <aside>
+      <div class="panel-title">上下文</div>
+      <div id="details" class="details">
+        <p class="empty">尚未加载文档。</p>
+      </div>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
