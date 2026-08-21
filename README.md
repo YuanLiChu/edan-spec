@@ -38,15 +38,13 @@ EdanSpec 的目标可以概括为三个关键词：**可控、可验证、可追
 
 简而言之：**传统 AI 辅助开发是"描述即实现，完成后检查"；EdanSpec 是"澄清后规划，实现即验证"。**
 
-## Agent目录结构
+## 规范目录结构
 
 ```
-├── AGENT.md                     # Agent 基础规范（核心铁律 + 上下文管理 + 变更工单）
-├── CLAUDE.md                    # CLAUDE规范文件（指向 AGENT.md）
+├── AGENTS.md                    # 唯一规范源（核心铁律 + 上下文管理 + 变更工单）
+│                                #   Claude Code 的 CLAUDE.md 由 setup.sh / setup.bat 派生
 ├── README.md                    # 项目概览
-├── agents/                      # 专家 Agent 定义
-│   ├── code-reviewer.md         # 代码审查专家（四维度评估）
-│   └── security-reviewer.md     # 安全审查专家（五维度检查）
+├── opencode.json                # OpenCode 配置（指令加载 + 权限）
 ├── docs/                        # 补充文档
 │   ├── anti-patterns.md         # 常见误区与反驳
 │   └── git-conventions.md       # Git 操作规范
@@ -54,18 +52,18 @@ EdanSpec 的目标可以概括为三个关键词：**可控、可验证、可追
 │   ├── common/                  # 通用编码风格（所有语言适用）
 │   ├── java/                    # Java 编码风格
 │   └── kotlin/                  # Kotlin 编码风格
-└── skills/                      # 技能集合
+└── skills/                      # 技能集合（一份，双平台通用）
     ├── project-context/         # 项目上下文初始化（扫描项目 → 生成知识地图）
-    ├── explore/                 # 探索模式（需求澄清 + 方案比较）
-    ├── create-spec/             # 创建规格（feature 目录 + proposal / spec / design）
-    ├── design-review/           # 设计评审（八章方案 + 八章详细设计）
-    ├── task-plan/               # 任务规划（拆分为可执行任务清单）
-    ├── task-implement/          # 任务实现（TDD 循环 + 原子提交）
-    ├── debugging/               # 调试排障（五步流程）
-    ├── code-review/             # 代码审查（四维度评估）
-    ├── security-review/         # 安全审查（五维度检查）
-    ├── verify/                  # 结构化验证（三维度验收）
-    └── archive/                 # 归档（delta spec 合并 + 文件移动）
+    ├── edanspec-explore/        # 探索模式（需求澄清 + 方案比较）
+    ├── edanspec-create-spec/    # 创建规格（feature 目录 + proposal / spec / design）
+    ├── edanspec-design-review/  # 设计评审（八章方案 + 八章详细设计）
+    ├── edanspec-task-plan/      # 任务规划（拆分为可执行任务清单）
+    ├── edanspec-task-implement/ # 任务实现（TDD 循环 + 原子提交）
+    ├── edanspec-debugging/      # 调试排障（五步流程）
+    ├── edanspec-code-review/    # 代码审查（四维度评估，含 reviewer-agent.md）
+    ├── edanspec-security-review/# 安全审查（五维度检查，含 security-reviewer-agent.md）
+    ├── edanspec-verify/         # 结构化验证（三维度验收，含 verifier-agent.md）
+    └── edanspec-archive/        # 归档（delta spec 合并 + 文件移动）
 ```
 
 
@@ -127,13 +125,23 @@ cd /path/to/your/project
 
 #### 2. 执行初始化脚本
 
+**macOS / Linux**（`setup.sh`）：
+
 ```bash
-# 根据你的 Agent 工具选择 platform 参数
-# claudecode  — 部署到 Claude Code（生成 .claude/ 目录）
-# opencode    — 部署到 OpenCode（生成 .opencode/ + opencode.json）
+# 单一规范源维护一份资产，setup.sh 按平台展开部署到目标项目
+# claudecode  — 部署到 {target}/.claude/（AGENTS.md 派生为 CLAUDE.md + docs + rules + skills）
+# opencode    — 部署到 {target}/.opencode/（AGENTS.md + docs + rules + skills）+ opencode.json
 /path/to/edan-spec/setup.sh . claudecode
 # 或
 /path/to/edan-spec/setup.sh . opencode
+```
+
+**Windows**（`setup.bat`，与 setup.sh 功能对等，cmd.exe / PowerShell 直接运行，无需 bash/python）：
+
+```bat
+C:\path\to\edan-spec\setup.bat . claudecode
+rem 或
+C:\path\to\edan-spec\setup.bat . opencode
 ```
 
 #### 3. 验证资源加载
@@ -141,26 +149,26 @@ cd /path/to/your/project
 **Claude Code**：
 ```bash
 claude               # 进入交互式会话
-/skills              # 检查 skills 列表，应看到 edanspec: 前缀的 11 个技能
+/skills              # 检查 skills 列表，应看到 edanspec- 前缀的 10 个技能及 project-context
 ```
 
 **OpenCode**：
 ```bash
 opencode             # 进入交互式会话
-# 检查 agents 和 skills 已正确加载
+# 检查 skills 已正确加载
 ```
 
 #### 4. 初始化项目规范（可选）
 
-**首次接入新项目**时，生成项目根目录下的规范文件：
+**首次接入新项目**时，EdanSpec 规范（AGENTS.md / skills / rules）已由 setup.sh 部署；如仍需生成项目自身的规范文件：
 
 Claude Code：
 ```bash
 claude               # 启动 Claude Code
-/init                # 生成项目根目录下的 CLAUDE.md
+/init                # 生成项目根目录下的 CLAUDE.md（项目自描述，个性化补充）
 ```
 
-OpenCode：启动后 Agent 会自动加载 `.opencode/AGENTS.md` 中的指令。
+OpenCode：启动后 Agent 会自动加载根目录 `AGENTS.md` 中的指令。
 
 如果是**非空项目**（已有代码），继续执行 `project-context` 生成知识地图：
 
@@ -203,14 +211,14 @@ OpenCode：
 #### 场景二：开发新功能（需求模糊）
 
 ```
-/edanspec:explore               →  澄清需求，比较方案
-/edanspec:create-spec           →  创建 feature 目录，生成 proposal + spec + design
-/edanspec:task-plan             →  拆分任务清单（tasks.md）
-/edanspec:task-implement        →  TDD 循环实现，原子提交
-/edanspec:code-review           →  四维度代码审查
-/edanspec:security-review       →  五维度安全检查
-/edanspec:verify                →  三维度验收
-/edanspec:archive               →  归档变更
+/edanspec-explore               →  澄清需求，比较方案
+/edanspec-create-spec           →  创建 feature 目录，生成 proposal + spec + design
+/edanspec-task-plan             →  拆分任务清单（tasks.md）
+/edanspec-task-implement        →  TDD 循环实现，原子提交
+/edanspec-code-review           →  四维度代码审查
+/edanspec-security-review       →  五维度安全检查
+/edanspec-verify                →  三维度验收
+/edanspec-archive               →  归档变更
 ```
 
 #### 场景三：开发新功能（需求明确）
@@ -218,15 +226,15 @@ OpenCode：
 跳过 `explore`，直接进入规格创建：
 
 ```
-/edanspec:create-spec           →  创建 feature 目录，生成 proposal + spec + design
-/edanspec:task-plan             →  拆分任务清单
+/edanspec-create-spec           →  创建 feature 目录，生成 proposal + spec + design
+/edanspec-task-plan             →  拆分任务清单
 ...（同场景二后续步骤）
 ```
 
 #### 场景四：继续上次未完成的工作
 
 ```
-/edanspec:task-implement        →  自动检测 EdanSpec/feature/ 下的活跃变更，恢复上下文
+/edanspec-task-implement        →  自动检测 EdanSpec/feature/ 下的活跃变更，恢复上下文
 ```
 
 Agent 会扫描 `EdanSpec/feature/` 目录，找到 `tasks.md` 中未勾选的任务，从断点继续。
@@ -242,9 +250,9 @@ Agent 会扫描 `EdanSpec/feature/` 目录，找到 `tasks.md` 中未勾选的�
 #### 场景六：提交前审查
 
 ```
-/edanspec:code-review           →  正确性、可读性、架构、性能
-/edanspec:security-review       →  输入验证、认证授权、数据保护、机密管理、依赖安全
-/edanspec:verify                →  完整性、正确性、一致性验收
+/edanspec-code-review           →  正确性、可读性、架构、性能
+/edanspec-security-review       →  输入验证、认证授权、数据保护、机密管理、依赖安全
+/edanspec-verify                →  完整性、正确性、一致性验收
 ```
 
 ---
@@ -310,7 +318,7 @@ EdanSpec/                        # 运行时根目录（由 skill 自动创建�
 - **冲突处理** — 信息冲突时不自己选，报告冲突并给选项
 - **内联计划** — 编码前用一两行说明思路，让用户有机会纠偏
 
-详见 [AGENT.md](AGENT.md) 中的完整上下文管理策略。
+详见 [AGENTS.md](AGENTS.md) 中的完整上下文管理策略。
 
 ## Git 规范
 
@@ -324,13 +332,9 @@ EdanSpec/                        # 运行时根目录（由 skill 自动创建�
 - Java 规范：[rules/java/coding-style.md](rules/java/coding-style.md)
 - Kotlin 规范：[rules/kotlin/coding-style.md](rules/kotlin/coding-style.md)
 
-## 测试覆盖率基线
+## 测试与质量
 
-| 指标 | 基线 |
-|------|------|
-| 行覆盖率 | ≥ 80% |
-| 分支覆盖率 | ≥ 70% |
-| 主要路径 | 100% |
+测试与质量规范（覆盖率工具配置、基线标准、TDD 编写原则、覆盖场景）在 [edanspec-task-implement](skills/edanspec-task-implement/SKILL.md) 技能中定义，实现阶段按技能加载。
 
 ## 变更管理
 
@@ -342,4 +346,4 @@ EdanSpec/                        # 运行时根目录（由 skill 自动创建�
 - **产物状态从文件系统事实推导** — 不写入 status.json，脚本实时计算
 - **完成后归档** — 移至 `EdanSpec/archive/`
 
-详见 [AGENT.md](AGENT.md) 中的变更管理机制。
+详见 [AGENTS.md](AGENTS.md) 中的变更管理机制。
