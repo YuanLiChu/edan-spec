@@ -11,8 +11,6 @@ from unittest import mock
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SCAN_PROJECT_PATH = (
     ROOT_DIR
-    / "claudecode"
-    / ".claude"
     / "skills"
     / "project-context"
     / "scripts"

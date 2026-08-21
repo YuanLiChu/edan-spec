@@ -5,7 +5,7 @@ from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-PROJECT_CONTEXT_DIR = ROOT_DIR / "claudecode" / ".claude" / "skills" / "project-context"
+PROJECT_CONTEXT_DIR = ROOT_DIR / "skills" / "project-context"
 SKILL_PATH = PROJECT_CONTEXT_DIR / "SKILL.md"
 MODULE_AGENT_PATH = ROOT_DIR / "claudecode" / ".claude" / "agents" / "module-explorer.md"
 FLOW_AGENT_PATH = ROOT_DIR / "claudecode" / ".claude" / "agents" / "flow-explorer.md"

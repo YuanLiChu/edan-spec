@@ -3,6 +3,8 @@ name: project-context
 description: 建立或更新面向工程师的项目知识地图，使用 CodeGraph 索引优先生成 L0 系统、L1 模块、L2 业务流、L3 代码证据和 L4 影响分析文档。触发场景：新项目首次接入、初始化项目、建立/更新知识地图、理解大型代码库、追踪业务流、修改前分析影响。单个 feature 的需求分析使用 explore/create-spec。
 ---
 
+<!-- SCRIPTS: scripts/（相对本 SKILL.md 所在目录）。正文用 {{SCRIPTS}} 引用 -->
+
 # Project Context
 
 为工程项目建立可导航、可验证、可增量更新的知识地图。
@@ -91,13 +93,13 @@ description: 建立或更新面向工程师的项目知识地图，使用 CodeGr
 大仓库或已有 CodeGraph 索引时：
 
 ```bash
-python skills/project-context/scripts/scan-project.py --fast "<projectPath>"
+python {{SCRIPTS}}/scan-project.py --fast "<projectPath>"
 ```
 
 只有确实需要精确行数时才运行完整模式：
 
 ```bash
-python skills/project-context/scripts/scan-project.py "<projectPath>"
+python {{SCRIPTS}}/scan-project.py "<projectPath>"
 ```
 
 ### 0.4 CodeGraph 健康检查
@@ -177,7 +179,7 @@ codegraph explore "<同一问题>" --path "<projectPath>" --max-files 12
 projectPath：{absolute-project-path}
 modulePath：{module-path}
 project.md：{contextPath}/project.md
-模板：skills/project-context/references/module-template.md
+模板：references/module-template.md
 CodeGraph 状态：{status 摘要}
 已验证线索：{符号/文件/跨模块关系的短列表}
 待回答问题：{职责、入口、数据、依赖、业务流}
@@ -214,7 +216,7 @@ CodeGraph 状态：{status 摘要}
 任务：为 {flow-name} 生成 L2 flow.md 与 L3 证据
 projectPath：{absolute-project-path}
 module.md：{module-doc-path}
-模板：skills/project-context/references/flow-template.md
+模板：references/flow-template.md
 入口线索：{入口符号/API/UI 动作/事件}
 终点线索：{持久化/外部调用/返回/UI 更新}
 已验证路径：{CodeGraph 返回的短关系列表}
@@ -274,7 +276,7 @@ module.md：{module-doc-path}
 
 完成前读取 review checklist，并验证：
 
-- 运行 `python skills/project-context/scripts/validate_context.py "<contextPath>" --json`，修复全部 error。
+- 运行 `python {{SCRIPTS}}/validate_context.py "<contextPath>" --json`，修复全部 error。
 - 所有产物路径和链接存在。
 - L0/L1/L2 不超过节点上限，所有重要边有语义。
 - Evidence ID 唯一，状态只使用 `Verified`、`Graph-Heuristic`、`Inferred`、`Unknown`。

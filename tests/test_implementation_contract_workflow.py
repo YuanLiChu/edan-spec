@@ -5,8 +5,7 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PLATFORMS = {
-    "claudecode": REPO_ROOT / "claudecode" / ".claude" / "skills",
-    "opencode": REPO_ROOT / "opencode" / ".opencode" / "skills",
+    "root": REPO_ROOT / "skills",
 }
 
 DETAIL_HEADINGS = (
@@ -33,8 +32,7 @@ TASK_CONTRACT_FIELDS = (
 
 
 def skill_path(platform: str, skill: str, relative: str = "SKILL.md") -> Path:
-    prefix = "" if platform == "claudecode" else "edanspec-"
-    return PLATFORMS[platform] / f"{prefix}{skill}" / relative
+    return PLATFORMS[platform] / f"edanspec-{skill}" / relative
 
 
 def read_skill(platform: str, skill: str, relative: str = "SKILL.md") -> str:

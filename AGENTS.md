@@ -172,3 +172,11 @@ C) 请用户决策
 ## 常见误区与反驳
 
 见 `docs/anti-patterns.md`。六类误区：太简单、后面补、差不多、不用确认、效率优先、场景特殊。核心原则：**识别到误区时立即停止，对照真相反思。**
+
+## Repository-specific notes
+
+<!-- CODEGRAPH_START -->
+在仓库根目录存在 `.codegraph/` 时，理解或定位代码前优先使用 CodeGraph；没有该目录则跳过。
+<!-- CODEGRAPH_END -->
+
+本项目的补充规范见 `claudecode/.claude/CLAUDE.md`（若该平台目录存在）。

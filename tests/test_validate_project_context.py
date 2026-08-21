@@ -9,8 +9,6 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).resolve().parents[1]
 VALIDATOR_PATH = (
     ROOT_DIR
-    / "claudecode"
-    / ".claude"
     / "skills"
     / "project-context"
     / "scripts"

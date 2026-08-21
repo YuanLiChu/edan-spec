@@ -78,8 +78,6 @@ Read .claude/skills/project-context/references/codegraph.md.
 
             source = (
                 ROOT_DIR
-                / "claudecode"
-                / ".claude"
                 / "skills"
                 / "project-context"
             )

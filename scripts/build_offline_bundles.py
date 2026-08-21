@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import re
 import shutil
+import sys
 import tempfile
 from pathlib import Path
 from typing import NamedTuple
@@ -13,7 +15,14 @@ from typing import NamedTuple
 try:
     from scripts import derive_project_context as common
 except (ImportError, ModuleNotFoundError):  # Direct execution from scripts/.
-    import derive_project_context as common
+    _common_spec = importlib.util.spec_from_file_location(
+        "derive_project_context", Path(__file__).with_name("derive_project_context.py")
+    )
+    if _common_spec is None or _common_spec.loader is None:
+        raise ImportError("unable to load derive_project_context.py")
+    common = importlib.util.module_from_spec(_common_spec)
+    sys.modules[_common_spec.name] = common
+    _common_spec.loader.exec_module(common)
 
 
 class BuildOutput(NamedTuple):
@@ -37,53 +46,58 @@ def copy_platform_tree(
 
 
 def stage_claudecode(repo_root: Path, stage: Path) -> None:
-    copy_platform_tree(
-        repo_root / "claudecode" / ".claude",
-        stage / ".claude",
-        source_prefix=".claude",
-        target_prefix=".claude",
-    )
+    copy_root_assets(repo_root, stage, prefix=".claude", rename_agents=True)
 
 
 def overlay_project_context(repo_root: Path, stage: Path) -> None:
-    claude = repo_root / "claudecode" / ".claude"
     target = stage / ".opencode"
-    common.copy_adapted_tree(
-        claude / "skills" / "project-context",
-        target / "skills" / "project-context",
-        source_prefix=".claude",
-        target_prefix=".opencode",
-        adapt_skill=True,
-    )
+    # Root assets already contain the canonical project-context skill and guide;
+    # only the Claude-specific explorer agents need platform adaptation here.
+    agents_source = repo_root / "claudecode" / ".claude" / "agents"
     agents = target / "agents"
     agents.mkdir(parents=True, exist_ok=True)
     for name in ("module-explorer.md", "flow-explorer.md"):
         text = common.adapt_agent_text(
-            (claude / "agents" / name).read_text(encoding="utf-8"),
+            (agents_source / name).read_text(encoding="utf-8"),
             target_prefix=".opencode",
         )
         (agents / name).write_text(text, encoding="utf-8", newline="\n")
-    guide = (claude / "docs" / "project-context-skill-guide.md").read_text(
-        encoding="utf-8"
+
+
+def copy_root_assets(
+    repo_root: Path, stage: Path, *, prefix: str, rename_agents: bool = False
+) -> None:
+    """Deploy the repository's single root asset set into a platform prefix."""
+    destination = stage / prefix
+    destination.mkdir(parents=True, exist_ok=True)
+    agents_name = "CLAUDE.md" if prefix == ".claude" else "AGENTS.md"
+    agents_text = (repo_root / "AGENTS.md").read_text(encoding="utf-8")
+    agents_text = agents_text.replace(".claude/", prefix + "/")
+    (destination / agents_name).write_text(
+        agents_text, encoding="utf-8", newline="\n"
     )
-    guide = guide.replace(".claude/", ".opencode/").replace(
-        "edanspec:", "edanspec-"
-    )
-    docs = target / "docs"
-    docs.mkdir(parents=True, exist_ok=True)
-    (docs / "project-context-skill-guide.md").write_text(
-        guide, encoding="utf-8", newline="\n"
-    )
+    for name in ("docs", "rules", "skills"):
+        common.copy_adapted_tree(
+            repo_root / name,
+            destination / name,
+            source_prefix=".claude",
+            target_prefix=prefix,
+        )
+    if rename_agents:
+        source = repo_root / "claudecode" / ".claude" / "agents"
+        target = destination / "agents"
+        target.mkdir(parents=True, exist_ok=True)
+        for name in ("module-explorer.md", "flow-explorer.md"):
+            text = common.adapt_agent_text(
+                (source / name).read_text(encoding="utf-8"),
+                target_prefix=prefix,
+            )
+            (target / name).write_text(text, encoding="utf-8", newline="\n")
 
 
 def stage_opencode(repo_root: Path, stage: Path) -> None:
-    copy_platform_tree(
-        repo_root / "opencode" / ".opencode",
-        stage / ".opencode",
-        source_prefix=".claude",
-        target_prefix=".opencode",
-    )
-    shutil.copy2(repo_root / "opencode" / "opencode.json", stage / "opencode.json")
+    copy_root_assets(repo_root, stage, prefix=".opencode")
+    shutil.copy2(repo_root / "opencode.json", stage / "opencode.json")
     overlay_project_context(repo_root, stage)
 
 

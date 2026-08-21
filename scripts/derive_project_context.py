@@ -110,9 +110,10 @@ def copy_adapted_tree(
 
 
 def stage_opencode(repo_root: Path, stage: Path) -> None:
-    claude = repo_root / "claudecode" / ".claude"
+    source = repo_root / "skills" / "project-context"
+    agents_source = repo_root / "claudecode" / ".claude" / "agents"
     copy_adapted_tree(
-        claude / "skills" / "project-context",
+        source,
         stage / ".opencode" / "skills" / "project-context",
         source_prefix=".claude",
         target_prefix=".opencode",
@@ -122,7 +123,7 @@ def stage_opencode(repo_root: Path, stage: Path) -> None:
     agents = stage / ".opencode" / "agents"
     agents.mkdir(parents=True, exist_ok=True)
     for name in ("module-explorer.md", "flow-explorer.md"):
-        source = claude / "agents" / name
+        source = agents_source / name
         adapted = adapt_agent_text(
             source.read_text(encoding="utf-8"), target_prefix=".opencode"
         )
@@ -130,7 +131,7 @@ def stage_opencode(repo_root: Path, stage: Path) -> None:
 
     docs = stage / ".opencode" / "docs"
     docs.mkdir(parents=True, exist_ok=True)
-    guide = (claude / "docs" / "project-context-skill-guide.md").read_text(
+    guide = (repo_root / "docs" / "project-context-skill-guide.md").read_text(
         encoding="utf-8"
     )
     guide = guide.replace(".claude/", ".opencode/").replace(
