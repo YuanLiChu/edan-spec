@@ -65,6 +65,8 @@
 | `.qml` / `.ui` / `.qrc` | `rules/qt/` + `rules/common/` 下所有 `.md` |
 | 其他语言 | `rules/common/` 下所有 `.md` |
 
+代码审查走 `edanspec:code-review`。通用四维审查始终执行；Qt C++ / QML 专项走读由 `EdanSpec/review-stack.yaml`（或 `.edan-dev/review-stack.yaml`）注册，分别调用 `qt-cpp-review`、`qt-qml-review`。通用入口不得把专项 checklist 抄进自己的报告。
+
 ## 变更管理
 
 所有代码变更通过变更目录（`EdanSpec/feature/{timestamp}-{topic}/`）进行追踪与管理：

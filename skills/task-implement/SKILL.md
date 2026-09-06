@@ -303,10 +303,13 @@ tasks.md 全部 done
 
 ### 6.2 执行 code-review
 
-调用 `edanspec:code-review` 对当前 feature 的代码变更进行四维度审查。
+调用 `edanspec:code-review` 对当前 feature 的代码变更进行四维度审查（含注册表路由的专项走读）。
 
-- **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后重新执行 code-review
-- **无 CRITICAL** → 更新 `reviewGate.codeReview.status = "passed"`、`lastRun` 记录时间、`hasCritical = false`、`findings` 记录各严重度数量，继续下一阶段
+- **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后删除 `code-review-report.md`，重新执行 code-review
+- **结论 `INCOMPLETE`** → 视为未通过；即使没有 CRITICAL，也不得将 `reviewGate.codeReview.status` 设为 `passed`，恢复时继续执行
+- **无 CRITICAL 且阶段完整** → 报告写入 `{feature-dir}/code-review-report.md`，更新 `reviewGate.codeReview.status = "passed"`、`lastRun` 记录时间、`hasCritical = false`、`findings` 记录各严重度数量，继续下一阶段
+
+> `INCOMPLETE` 表示必要的通用或已启用专项审查阶段未完成，即使没有 CRITICAL，也必须视为未通过并在恢复时继续执行。
 
 ### 6.3 执行 security-review
 

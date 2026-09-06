@@ -34,14 +34,18 @@
 │   ├── task-plan/               # 任务规划（拆分为可执行任务清单）
 │   ├── task-implement/          # 任务实现（TDD 循环 + 原子提交）
 │   ├── debugging/               # 调试排障（五步流程）
-│   ├── code-review/             # 代码审查（四维度评估）
+│   ├── code-review/             # 代码审查（四维度 + 专项栈路由）
+│   ├── qt-cpp-review/           # Qt C++ 专项走读（lint + 六路深度分析）
+│   ├── qt-qml-review/           # Qt QML 专项走读（lint + qmllint + 六路分析）
 │   ├── security-review/         # 安全审查（五维度检查）
 │   ├── verify/                  # 结构化验证（三维度验收）
 │   └── archive/                 # 归档（delta spec 合并 + 文件移动）
 └── EdanSpec/                    # 运行时目录（生成产物）
     ├── feature/                 # 变更工单目录（运行时生成）
     ├── archive/                 # 归档目录（完成后移动）
-    └── specs/                   # 主 spec 存储（delta spec 合并后归档于此）
+    ├── specs/                   # 主 spec 存储（delta spec 合并后归档于此）
+    ├── review-stack.yaml        # 代码走读专项栈注册表
+    └── review-notes/            # 项目级走读补充（不写入通用 checklist）
 ```
 
 ## 工作流
@@ -93,7 +97,9 @@ flowchart LR
 | **任务规划** | `task-plan` | 按完整功能拆分需求，生成验收标准、验证步骤、工时估算、依赖关系 |
 | **任务实现** | `task-implement` | TDD 循环（RED→GREEN→REFACTOR），每个增量独立验证后原子提交，遵循规范体系 |
 | **调试排障** | `debugging` | 观察→复现→定位→修复→验证，五步流程，不盲目改代码 |
-| **代码审查** | `code-review` | 四维度评估：正确性、可读性、架构、性能 |
+| **代码审查** | `code-review` | 四维度评估：正确性、可读性、架构、性能；按 `review-stack.yaml` 路由 Qt C++/QML 专项走读 |
+| **Qt C++ 走读** | `qt-cpp-review` | 确定性 lint + 模型/所有权/线程/API/错误处理/性能六路分析 |
+| **Qt QML 走读** | `qt-qml-review` | 确定性 lint + qmllint + bindings/layout/loader/delegate/states/性能六路分析 |
 | **安全审查** | `security-review` | 五维度检查：输入验证、认证/授权、数据保护、机密管理、依赖安全 |
 | **结构化验证** | `verify` | 三维度验收：完整性、正确性、一致性，归档前最终关卡 |
 | **归档** | `archive` | delta spec 合并到主规范，feature 移至归档目录 |

@@ -11,6 +11,32 @@ description: 合并前四维度审查（正确性、可读性、架构、性能�
 
 > **职责分工**：本 skill 负责流程编排（确定范围 → 启动审查 → 处理结果）。审查维度定义、检查项细则、输出格式以 `agents/code-reviewer.md` 为准。
 
+## 技术栈专项自动路由
+
+`edanspec:code-review` 是通用入口。通用四维审查始终执行；技术栈专项能力由被审查项目的走读注册表配置。
+
+1. 固化本次审查的 `allFiles`（diff、commit 或目录范围），不得让后续 reviewer 自行扩大范围。
+2. 读取走读注册表，查找顺序：
+   - `EdanSpec/review-stack.yaml`
+   - `.edan-dev/review-stack.yaml`
+   - 文件不存在时只执行通用审查，`specialists` 为空；
+   - 配置格式错误时记录 `specialistConfig: invalid`，继续通用审查，但最终结论不得为 `APPROVE`；
+   - 只处理 `enabled: true` 的注册项。
+3. 对每个注册项按 `match.extensions`、`match.content_any` 和 `match.build_any` 计算 `matchedFiles`。匹配必须基于固化的 `allFiles`，不得扫描范围外文件。
+4. 通用 reviewer 始终接收 `allFiles`。每个专项 skill 只接收自己的 `matchedFiles`、注册项中的 `guidance` 文件和审查语义。
+5. 专项 skill 自己负责确定性 lint、深度分析、专项报告和专项规则；通用入口不得复制任何技术栈的检查清单或阶段细节。专项 skill 不可用、执行失败或报告无法生成时，对应 `specialists.<stack-id>` 为 `failed`。
+6. 统一报告使用可扩展状态：`genericReview` 和 `specialists.<stack-id>`。状态为 `complete`、`partial`、`failed` 或 `not-applicable`；专项原始报告路径和来源由注册项或专项 skill 自己声明。
+
+本仓库默认注册 `qt-cpp-review` 与 `qt-qml-review`。专项配置只描述路由和项目级补充说明，不把规则正文写进 YAML。可复用的技术栈规则放在对应 skill 的 `references/`；项目或团队特有经验通过 `guidance` 传入。
+
+## 统一结论
+
+- 存在确认的 `CRITICAL`：`REQUEST_CHANGES`。
+- 所有必要阶段完成且没有 `CRITICAL`：`APPROVE`。
+- 配置错误、启用的专项缺失/失败、报告无法解析或必要 lint 未运行：`INCOMPLETE`，不得报告为 `APPROVE`。
+- 专项报告中的 investigation target 进入统一报告的“待人工确认”章节，不单独升级为 `CRITICAL`。
+- 没有注册表或没有匹配到专项文件时，不生成专项报告；这不是失败，而是 `not-applicable`。
+
 ## 流程
 
 ### 1. 确定审查范围
@@ -48,6 +74,23 @@ description: 合并前四维度审查（正确性、可读性、架构、性能�
 | **SUGGESTION** | 命名优化、代码风格 | 可以考虑 |
 
 **有 CRITICAL → 不批准合并。**
+**有必要阶段 `INCOMPLETE`/`failed` → 不批准合并，即使没有 CRITICAL。**
+
+## 报告持久化
+
+审查完成后，**必须将报告写入文件**，以便 task-implement 步骤六基于事实检查。
+
+| 条件 | 操作 |
+|------|------|
+| 在 feature 目录下（存在 `EdanSpec/feature/` 路径） | 将报告写入 `{feature-dir}/code-review-report.md`，并输出报告到控制台 |
+| 不在 feature 目录下 | 仅输出报告到控制台，不写文件 |
+
+**判定规则：**
+- 有 CRITICAL → 报告结论为 `REQUEST_CHANGES`，`code-review-report.md` 中 CRITICAL 数量 > 0
+- 无 CRITICAL 且所有必要阶段完成 → 报告结论为 `APPROVE`，`code-review-report.md` 中 CRITICAL 数量为 0
+- 无 CRITICAL 但专项阶段不完整 → 报告结论为 `INCOMPLETE`，不得进入完成或可合并状态
+
+**报告文件路径**：`{feature-dir}/code-review-report.md`。task-implement 恢复时通过读取此文件判断是否已通过。
 
 ## 状态更新
 
@@ -56,7 +99,8 @@ description: 合并前四维度审查（正确性、可读性、架构、性能�
 { "reviewGate": { "codeReview": { "status": "passed" 或 "failed", "lastRun": "...", "hasCritical": true/false, "findings": { "critical": N, "important": N, "suggestion": N } } } }
 ```
 - 有 CRITICAL → `status: "failed"`, `hasCritical: true`
-- 无 CRITICAL → `status: "passed"`, `hasCritical: false`
+- 无 CRITICAL 但结论为 `INCOMPLETE` → `status: "failed"`, `hasCritical: false`
+- 无 CRITICAL 且结论为 `APPROVE` → `status: "passed"`, `hasCritical: false`
 
 **`findings` 记录各严重度问题的数量**，便于后续关卡和 archive 了解审查质量。
 
@@ -84,6 +128,8 @@ description: 合并前四维度审查（正确性、可读性、架构、性能�
 - [ ] 每个发现都有文件位置和修复建议
 - [ ] 严重程度分级正确
 - [ ] 没有 CRITICAL 问题遗留
+- [ ] 已按注册表路由专项 skill（无匹配则为 `not-applicable`）
+- [ ] 必要专项阶段未完成时结论为 `INCOMPLETE`，未标成 `APPROVE`
 - [ ] 涉及认证/授权/用户输入/密钥管理时，已引导执行 `edanspec:security-review`
 
 ## 输出格式
@@ -100,7 +146,8 @@ description: 合并前四维度审查（正确性、可读性、架构、性能�
 | **审查范围** | [文件列表或变更描述] |
 | **变更类型** | [新功能 / Bug 修复 / 重构 / 性能优化] |
 | **变更规模** | [+X 行 -Y 行，共 Z 行] |
-| **结论** | APPROVE / REQUEST_CHANGES |
+| **结论** | APPROVE / REQUEST_CHANGES / INCOMPLETE |
+| **审查完整性** | COMPLETE / INCOMPLETE |
 
 ---
 

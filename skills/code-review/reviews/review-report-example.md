@@ -10,6 +10,14 @@
 | **变更类型** | 新功能 |
 | **变更规模** | +76 行 -0 行，共 76 行 |
 | **结论** | REQUEST_CHANGES |
+| **审查完整性** | COMPLETE |
+
+## 审查阶段
+
+| 阶段 | 状态 | 文件范围/备注 |
+|------|------|---------------|
+| 通用四维审查 `genericReview` | complete | PointCalculator.cpp |
+| 专项 `specialists.qt-cpp` | not-applicable | 无 Qt 头文件 / Q_OBJECT |
 
 ---
 
@@ -137,6 +145,12 @@
 建议：使用 `orderPoints`、`bonusPoints`、`totalPoints` 等具体命名
 ────────────────────────────────────────
 ```
+
+---
+
+## 待人工确认
+
+> 共 0 个。专项 investigation target 放在此处，不升级为 CRITICAL。
 
 ---
 
