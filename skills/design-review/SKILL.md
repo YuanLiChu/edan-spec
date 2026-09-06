@@ -1,12 +1,12 @@
 ---
-name: edanspec:design-review
+name: meddev:design-review
 author: yuanlichu
-description: 复杂功能的正式评审流程——八章方案文档 + 八章详细设计。触发场景：用户明确说「出方案」「详细设计」「架构评审」「design review」。日常功能用 edanspec:create-spec 即可。前置条件：feature 下已有 proposal + spec + design 产物（由 create-spec 生成）。
+description: 复杂功能的正式评审流程——八章方案文档 + 八章详细设计。触发场景：用户明确说「出方案」「详细设计」「架构评审」「design review」。日常功能用 meddev:create-spec 即可。前置条件：feature 下已有 proposal + spec + design 产物（由 create-spec 生成）。
 ---
 
 # 设计评审（复杂评审）
 
-> **日常功能用 `edanspec:create-spec` 就够了。** 本 skill 用于大功能/架构变更的正式评审——产出八章方案文档 + 八章详细设计。
+> **日常功能用 `meddev:create-spec` 就够了。** 本 skill 用于大功能/架构变更的正式评审——产出八章方案文档 + 八章详细设计。
 
 在写代码之前，把需求变成重量级的结构化技术文档。
 
@@ -38,11 +38,11 @@ description: 复杂功能的正式评审流程——八章方案文档 + 八章�
 
 | 检测 | 有产物 | 无产物 |
 |------|--------|--------|
-| proposal.md | 直接读取作为输入 | **提示用户先执行 `edanspec:create-spec`** |
-| specs/*.md | 直接读取作为输入 | **提示用户先执行 `edanspec:create-spec`** |
-| design.md | 直接读取作为输入 | **提示用户先执行 `edanspec:create-spec`** |
+| proposal.md | 直接读取作为输入 | **提示用户先执行 `meddev:create-spec`** |
+| specs/*.md | 直接读取作为输入 | **提示用户先执行 `meddev:create-spec`** |
+| design.md | 直接读取作为输入 | **提示用户先执行 `meddev:create-spec`** |
 
-**产物缺失时不内联生成。** 提示用户先用 `edanspec:create-spec` 创建产物，再重新执行本 skill。
+**产物缺失时不内联生成。** 提示用户先用 `meddev:create-spec` 创建产物，再重新执行本 skill。
 
 > **design.md 的角色**：design.md 由 create-spec 阶段生成，design-review 将其作为**输入**——在此基础上做更深入的架构评审，产出独立的 `review/solution.md` 和 `review/detail.md`。design-review 不覆盖、不重新生成 design.md，而是增强它。
 
@@ -55,7 +55,7 @@ description: 复杂功能的正式评审流程——八章方案文档 + 八章�
 基于产物文档（proposal + spec + design），生成高层架构设计评审文档。
 
 - **模板**：`templates/design-review-template.md`（八章，模块级架构）
-- **输出**：`EdanSpec/feature/<name>/review/solution.md`
+- **输出**：`MedSpec/feature/<name>/review/solution.md`
 - **逐章生成**：读一章 → 写一章 → 保存 → 展示摘要 → 用户确认 → 下一章
 - **禁止多章批量生成**——上下文膨胀，质量跳水
 
@@ -68,7 +68,7 @@ description: 复杂功能的正式评审流程——八章方案文档 + 八章�
 基于方案文档和产物文档，生成代码级详细设计。
 
 - **模板**：`templates/detail-design-template.md`（八章，代码级细节）
-- **输出**：`EdanSpec/feature/<name>/review/detail.md`
+- **输出**：`MedSpec/feature/<name>/review/detail.md`
 - 同样逐章生成，不批量
 
 ---
@@ -81,14 +81,14 @@ description: 复杂功能的正式评审流程——八章方案文档 + 八章�
 
 **优先方案 — pandoc：**
 ```bash
-python3 scripts/generate_mermaid_images.py EdanSpec/feature/<name>/review/solution.md --replace
-pandoc EdanSpec/feature/<name>/review/solution-images.md -o EdanSpec/feature/<name>/review/solution.docx
+python3 scripts/generate_mermaid_images.py MedSpec/feature/<name>/review/solution.md --replace
+pandoc MedSpec/feature/<name>/review/solution-images.md -o MedSpec/feature/<name>/review/solution.docx
 ```
 
 **备选方案 — generate_docx.py（pandoc 未安装时）：**
 ```bash
-python3 scripts/generate_mermaid_images.py EdanSpec/feature/<name>/review/solution.md --replace
-python3 scripts/generate_docx.py EdanSpec/feature/<name>/review/solution-images.md EdanSpec/feature/<name>/review/solution.docx
+python3 scripts/generate_mermaid_images.py MedSpec/feature/<name>/review/solution.md --replace
+python3 scripts/generate_docx.py MedSpec/feature/<name>/review/solution-images.md MedSpec/feature/<name>/review/solution.docx
 ```
 
 > `generate_docx.py` 使用 python-docx 渲染 Markdown（支持标题、粗体、代码块、列表、表格），不依赖 pandoc。
@@ -135,11 +135,11 @@ python3 scripts/generate_docx.py EdanSpec/feature/<name>/review/solution-images.
 
 ## 下一步
 
-设计评审完成后，用 `edanspec:task-plan` 拆分任务。
+设计评审完成后，用 `meddev:task-plan` 拆分任务。
 
 ## 与 create-spec 的关系
 
-本 skill 可被用户直接执行，也可由 `edanspec:create-spec` 引导调用（大功能/架构变更时）。两者产出不同重量的文档，互为补充而非替代。
+本 skill 可被用户直接执行，也可由 `meddev:create-spec` 引导调用（大功能/架构变更时）。两者产出不同重量的文档，互为补充而非替代。
 
 **握手机制**：create-spec 通过 `status.json` 中的 `designReviewState` 记录状态（`"none"` / `"recommended"` / `"skipped"`）。design-review 启动时读取该字段，了解自身是被推荐调用的还是用户主动回来的。无论哪种来源，只要产物齐全就正常执行。
 

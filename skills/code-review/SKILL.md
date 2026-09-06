@@ -1,24 +1,24 @@
 ---
 
-name: edanspec:code-review
+name: meddev:code-review
 author: yuanlichu
 description: 合并前四维度审查（正确性、可读性、架构、性能）。触发场景：代码实现完成后、合并前、用户要求「审查代码」「代码审查」「看看这段代码」「有没有问题」。不适用于纯文档修改或格式调整。
 ---
 
 # 代码审查
 
-合入前从四个维度评估代码质量。审查不是找茬——是在代码合入前发现真正的问题。涉及安全维度（认证/授权/用户输入/密钥管理）时，建议用户另行执行 `edanspec:security-review`。
+合入前从四个维度评估代码质量。审查不是找茬——是在代码合入前发现真正的问题。涉及安全维度（认证/授权/用户输入/密钥管理）时，建议用户另行执行 `meddev:security-review`。
 
 > **职责分工**：本 skill 负责流程编排（确定范围 → 启动审查 → 处理结果）。审查维度定义、检查项细则、输出格式以 `agents/code-reviewer.md` 为准。
 
 ## 技术栈专项自动路由
 
-`edanspec:code-review` 是通用入口。通用四维审查始终执行；技术栈专项能力由被审查项目的走读注册表配置。
+`meddev:code-review` 是通用入口。通用四维审查始终执行；技术栈专项能力由被审查项目的走读注册表配置。
 
 1. 固化本次审查的 `allFiles`（diff、commit 或目录范围），不得让后续 reviewer 自行扩大范围。
 2. 读取走读注册表，查找顺序：
-   - `EdanSpec/review-stack.yaml`
-   - `.edan-dev/review-stack.yaml`
+   - `MedSpec/review-stack.yaml`
+   - `.meddev/review-stack.yaml`
    - 文件不存在时只执行通用审查，`specialists` 为空；
    - 配置格式错误时记录 `specialistConfig: invalid`，继续通用审查，但最终结论不得为 `APPROVE`；
    - 只处理 `enabled: true` 的注册项。
@@ -82,7 +82,7 @@ description: 合并前四维度审查（正确性、可读性、架构、性能�
 
 | 条件 | 操作 |
 |------|------|
-| 在 feature 目录下（存在 `EdanSpec/feature/` 路径） | 将报告写入 `{feature-dir}/code-review-report.md`，并输出报告到控制台 |
+| 在 feature 目录下（存在 `MedSpec/feature/` 路径） | 将报告写入 `{feature-dir}/code-review-report.md`，并输出报告到控制台 |
 | 不在 feature 目录下 | 仅输出报告到控制台，不写文件 |
 
 **判定规则：**
@@ -130,7 +130,7 @@ description: 合并前四维度审查（正确性、可读性、架构、性能�
 - [ ] 没有 CRITICAL 问题遗留
 - [ ] 已按注册表路由专项 skill（无匹配则为 `not-applicable`）
 - [ ] 必要专项阶段未完成时结论为 `INCOMPLETE`，未标成 `APPROVE`
-- [ ] 涉及认证/授权/用户输入/密钥管理时，已引导执行 `edanspec:security-review`
+- [ ] 涉及认证/授权/用户输入/密钥管理时，已引导执行 `meddev:security-review`
 
 ## 输出格式
 

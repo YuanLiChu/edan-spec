@@ -1,5 +1,5 @@
 ---
-name: edanspec:task-implement
+name: meddev:task-implement
 author: yuanlichu
 description: 依据任务文档执行代码实现。增量式开发 + 测试驱动（TDD），每个增量独立验证后原子提交。触发场景：用户要求开始实现功能或修复 bug、按任务计划执行、继续上次工作。不适用于纯配置变更、文档更新、简单重命名。
 ---
@@ -75,10 +75,10 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 
 有活跃 feature 时自动执行，从状态驱动恢复，不依赖会话记忆。
 
-**检测流程**：`EdanSpec/feature/` 下有活跃工单 → 读 `status.json` + `tasks.md` → 从 taskGraph 中第一个 `status != "done"` 的任务恢复；无活跃工单 → 继续步骤二。
+**检测流程**：`MedSpec/feature/` 下有活跃工单 → 读 `status.json` + `tasks.md` → 从 taskGraph 中第一个 `status != "done"` 的任务恢复；无活跃工单 → 继续步骤二。
 
 **恢复操作**：
-1. `find EdanSpec/feature/ -maxdepth 1 -mindepth 1 -type d | sort` 定位工单
+1. `find MedSpec/feature/ -maxdepth 1 -mindepth 1 -type d | sort` 定位工单
 2. 读 `status.json`，**重新计算每个任务的 status**（基于 tasks.md checkbox + 依赖关系）
 3. 从 taskGraph 中找出第一个 `status != "done"` 的任务 → 断点
 4. 如果全部 done → 检查 reviewGate，见步骤六
@@ -93,7 +93,7 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 | 部分任务 in_progress | 从该任务的 currentIncrement 继续 |
 | 有 ready 但未开始 | 从第一个 ready 任务开始 |
 | taskGraph 为空/缺失 | 从 tasks.md 重新生成 taskGraph |
-| 测试失败 | 调 `edanspec:debugging` 排障 |
+| 测试失败 | 调 `meddev:debugging` 排障 |
 
 > **reviewGate 缺失处理**：如果 `status.json` 中不存在 `reviewGate` 字段（例如跳过了 create-spec 直接调用 task-implement），在步骤六开始前先初始化 reviewGate 为全 pending 状态，参见 create-spec/SKILL.md 中的初始化格式。
 
@@ -109,7 +109,7 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 
 ## 步骤二：加载
 
-读取 `EdanSpec/feature/<name>/tasks.md`，记录验收标准、涉及文件、任务依赖关系。
+读取 `MedSpec/feature/<name>/tasks.md`，记录验收标准、涉及文件、任务依赖关系。
 
 ### 依赖检查
 
@@ -202,9 +202,9 @@ RED（失败测试）→ GREEN（最小实现）→ REFACTOR（重构）→ 验�
 | 手动验证（真机操作、UI 视觉检查、完整流程走查） | **跳过，不执行**。Agent 仅执行自动化验证 |
 
 **规则**：
-- 自动化验证不通过 → 调 `edanspec:debugging` 排障，不得跳过
+- 自动化验证不通过 → 调 `meddev:debugging` 排障，不得跳过
 - 所有验证均为 Agent 可自动执行的命令验证，无需用户手动确认
-- 测试失败 → 调 `edanspec:debugging` 五步排障，不盲目改代码
+- 测试失败 → 调 `meddev:debugging` 五步排障，不盲目改代码
 
 ### 串行路径
 
@@ -299,11 +299,11 @@ tasks.md 全部 done
 | 有 pending 关卡 | 执行第一个 pending 关卡（按 code-review → security-review → verify 顺序） |
 | 有 passed 关卡 | **直接跳过**，不重复执行。即使 code-review 中已引导过 security-review，仍以 reviewGate 状态为准 |
 
-> **关于重复审查**：code-review 可能识别到安全问题并引导用户单独执行 `edanspec:security-review`。此时 reviewGate.securityReview 可能已是 `passed`。步骤六不再重复执行，直接跳过已通过的关卡。
+> **关于重复审查**：code-review 可能识别到安全问题并引导用户单独执行 `meddev:security-review`。此时 reviewGate.securityReview 可能已是 `passed`。步骤六不再重复执行，直接跳过已通过的关卡。
 
 ### 6.2 执行 code-review
 
-调用 `edanspec:code-review` 对当前 feature 的代码变更进行四维度审查（含注册表路由的专项走读）。
+调用 `meddev:code-review` 对当前 feature 的代码变更进行四维度审查（含注册表路由的专项走读）。
 
 - **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后删除 `code-review-report.md`，重新执行 code-review
 - **结论 `INCOMPLETE`** → 视为未通过；即使没有 CRITICAL，也不得将 `reviewGate.codeReview.status` 设为 `passed`，恢复时继续执行
@@ -313,14 +313,14 @@ tasks.md 全部 done
 
 ### 6.3 执行 security-review
 
-调用 `edanspec:security-review` 对当前 feature 的代码变更进行五维度安全审查。
+调用 `meddev:security-review` 对当前 feature 的代码变更进行五维度安全审查。
 
 - **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后重新执行 security-review
 - **无 CRITICAL** → 更新 `reviewGate.securityReview.status = "passed"`、`lastRun` 记录时间、`hasCritical = false`、`findings` 记录各严重度数量，继续下一阶段
 
 ### 6.4 执行 verify
 
-调用 `edanspec:verify` 对当前 feature 执行三维度验证。
+调用 `meddev:verify` 对当前 feature 执行三维度验证。
 
 - **有 CRITICAL** → 展示报告，**自动修复**所有 CRITICAL 问题，修复后重新执行 verify
 - **无 CRITICAL** → 更新 `reviewGate.verify.status = "passed"`、`lastRun` 记录时间、`hasCritical = false`、`findings` 记录各严重度数量，实现完成
@@ -329,7 +329,7 @@ tasks.md 全部 done
 
 三个关卡全部 `status = "passed"` 且 `hasCritical = false` → 更新 `status.json`：`state = "completed"`，然后引导用户归档：
 
-> "实现完成，全部审查通过。要现在归档这个 feature 吗？（`edanspec:archive`）"
+> "实现完成，全部审查通过。要现在归档这个 feature 吗？（`meddev:archive`）"
 
 **任一关卡未执行或未通过 → 不算实现完成。** 恢复时从 reviewGate 的 pending 关卡继续。
 
@@ -383,7 +383,7 @@ tasks.md 全部 done
 
 **全部任务完成**：全量测试通过、构建产物干净、工作区无未提交变更、三个审查关卡全部通过。
 
-**修复上限提醒**（详见 `edanspec:debugging`）：修复次数从尝试次数计数——同一问题修复超过 2 次未成功应停下来重新定位根因（第 3 次，调 `edanspec:debugging`）；超过 3 次应调 `edanspec:explore` 重新审视设计方案（第 4 次）；第 5 次停止并报告问题。
+**修复上限提醒**（详见 `meddev:debugging`）：修复次数从尝试次数计数——同一问题修复超过 2 次未成功应停下来重新定位根因（第 3 次，调 `meddev:debugging`）；超过 3 次应调 `meddev:explore` 重新审视设计方案（第 4 次）；第 5 次停止并报告问题。
 
 ## 辅助资源（按需加载）
 

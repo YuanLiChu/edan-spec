@@ -1,5 +1,5 @@
 ---
-name: edanspec:verify
+name: meddev:verify
 author: yuanlichu
 description: 三维度（完整性/正确性/一致性）+ 三级严重度报告。触发场景：feature 完成准备归档、用户要求「验证一下」「检查完成度」「看看还缺什么」。不适用于单行修复或小改动。
 ---
@@ -24,7 +24,7 @@ feature 归档前的最终关卡。"拿证据说话"——但结构化告诉你*
 
 读取 feature 中的全部产物：
 - `tasks.md` — 任务清单
-- `specs/{capability}-spec.md` — delta spec（feature 目录下，相对路径 `EdanSpec/feature/<name>/specs/`）
+- `specs/{capability}-spec.md` — delta spec（feature 目录下，相对路径 `MedSpec/feature/<name>/specs/`）
 - `design.md` — 技术设计
 - `proposal.md` — 提案（如有）
 
@@ -107,7 +107,7 @@ feature 归档前的最终关卡。"拿证据说话"——但结构化告诉你*
 
 ## 结论
 
-- 有 CRITICAL → "发现 N 个 CRITICAL 问题，解决前不能归档"。回退路径：调 `edanspec:task-implement` 修复对应任务 → 修复后重新运行 verify
+- 有 CRITICAL → "发现 N 个 CRITICAL 问题，解决前不能归档"。回退路径：调 `meddev:task-implement` 修复对应任务 → 修复后重新运行 verify
 - 仅有 IMPORTANT → "无 CRITICAL 问题，N 个 IMPORTANT 建议归档前处理"
 - 全部通过 → "验证通过，可以归档"
 ```
@@ -125,7 +125,7 @@ feature 归档前的最终关卡。"拿证据说话"——但结构化告诉你*
 ## 归档前流程
 
 1. 运行三维度验证
-2. 有 CRITICAL → 拒绝归档，返回报告。引导用户回退到 `edanspec:task-implement` 修复对应任务。更新 `status.json`：`reviewGate.verify.status = "failed"`，`reviewGate.verify.hasCritical = true`，记录各严重度数量到 `reviewGate.verify.findings`
+2. 有 CRITICAL → 拒绝归档，返回报告。引导用户回退到 `meddev:task-implement` 修复对应任务。更新 `status.json`：`reviewGate.verify.status = "failed"`，`reviewGate.verify.hasCritical = true`，记录各严重度数量到 `reviewGate.verify.findings`
 3. 有 IMPORTANT（无 CRITICAL）→ 展示报告，说明存在 N 个 IMPORTANT 建议，用户确认后可归档。更新 `status.json`：`reviewGate.verify.status = "passed"`，`reviewGate.verify.hasCritical = false`，记录 findings（`important > 0`）
 4. 全部通过 → 展示报告，输出"验证通过，可以归档"。更新 `status.json`：`reviewGate.verify.status = "passed"`，`reviewGate.verify.hasCritical = false`，`findings` 记录实际发现数量（可能全为 0，也可能有少量 SUGGESTION）
 
@@ -139,7 +139,7 @@ feature 归档前的最终关卡。"拿证据说话"——但结构化告诉你*
 
 **`findings` 字段**：`{ "critical": N, "important": N, "suggestion": N }`，记录各严重度发现数量。archive 据此判断是否存在遗留问题。
 
-**verify 只负责验证、输出报告和更新 status.json。delta spec 合并和文件移动由 `edanspec:archive` 负责。**
+**verify 只负责验证、输出报告和更新 status.json。delta spec 合并和文件移动由 `meddev:archive` 负责。**
 
 ## 常见误区与反驳
 

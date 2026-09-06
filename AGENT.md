@@ -1,6 +1,6 @@
 # Agent 基础规范
 
-本规范面向 **C++ / Qt** 工程。作者：yuanlichu。
+本规范面向 **医疗器械软件（C++ / Qt）** 工程。作者：yuanlichu。
 
 ## 核心铁律
 
@@ -65,17 +65,17 @@
 | `.qml` / `.ui` / `.qrc` | `rules/qt/` + `rules/common/` 下所有 `.md` |
 | 其他语言 | `rules/common/` 下所有 `.md` |
 
-代码审查走 `edanspec:code-review`。通用四维审查始终执行；Qt C++ / QML 专项走读由 `EdanSpec/review-stack.yaml`（或 `.edan-dev/review-stack.yaml`）注册，分别调用 `qt-cpp-review`、`qt-qml-review`。通用入口不得把专项 checklist 抄进自己的报告。
+代码审查走 `meddev:code-review`。通用四维审查始终执行；Qt C++ / QML 专项走读由 `MedSpec/review-stack.yaml`（或 `.meddev/review-stack.yaml`）注册，分别调用 `qt-cpp-review`、`qt-qml-review`。通用入口不得把专项 checklist 抄进自己的报告。
 
 ## 变更管理
 
-所有代码变更通过变更目录（`EdanSpec/feature/{timestamp}-{topic}/`）进行追踪与管理：
+所有代码变更通过变更目录（`MedSpec/feature/{timestamp}-{topic}/`）进行追踪与管理：
 
 - **一个变更 = 一个目录** — 聚合 proposal、specs、design、tasks 等交付物
 - **状态驱动** — 从文件系统恢复上下文，不依赖会话记忆
 - **tasks.md 是唯一进度来源** — 采用 checkbox 格式，驱动 implement 流程
 - **status.json 同步** — 每次创建或更新交付物后同步更新 `artifactGraph` 字段
-- **完成后归档** — 移至 `EdanSpec/archive/`
+- **完成后归档** — 移至 `MedSpec/archive/`
 
 新会话启动时的上下文恢复流程见"上下文管理"章节。
 
@@ -136,7 +136,7 @@
 
 新会话启动或中断恢复时，按以下检查清单重建上下文：
 
-1. 检查 `EdanSpec/feature/` 是否存在活跃变更（`status.json` 中 `state: "active"`）
+1. 检查 `MedSpec/feature/` 是否存在活跃变更（`status.json` 中 `state: "active"`）
 2. 读取 `status.json` 确认当前阶段和已完成的交付物
 3. 读取 `tasks.md` 确认待办任务
 4. 仅加载与下一步任务相关的源文件

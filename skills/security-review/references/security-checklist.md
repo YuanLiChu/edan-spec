@@ -1,6 +1,6 @@
 # 安全速查清单
 
-C++ / Qt 应用安全速查。与 `edanspec:security-review` skill 配合使用。
+C++ / Qt 应用安全速查。与 `meddev:security-review` skill 配合使用。
 
 ## 目录
 

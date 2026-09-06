@@ -1,6 +1,6 @@
-# edan-spec
+# meddev-spec
 
-一套面向 **C++ / Qt** 工程的结构化 AI 辅助软件开发工作流规范，包含 Agent 行为准则、编码规范、技能（Skills）库和文档模板。
+一套面向 **医疗器械软件（C++ / Qt）** 的 AI 辅助开发流程 Skills：从需求澄清、规格设计、任务拆分、TDD 实现，到代码走读、安全审查与归档。
 
 **作者：** yuanlichu
 
@@ -40,7 +40,7 @@
 │   ├── security-review/         # 安全审查（五维度检查）
 │   ├── verify/                  # 结构化验证（三维度验收）
 │   └── archive/                 # 归档（delta spec 合并 + 文件移动）
-└── EdanSpec/                    # 运行时目录（生成产物）
+└── MedSpec/                     # 运行时目录（生成产物）
     ├── feature/                 # 变更工单目录（运行时生成）
     ├── archive/                 # 归档目录（完成后移动）
     ├── specs/                   # 主 spec 存储（delta spec 合并后归档于此）
@@ -151,12 +151,12 @@ flowchart LR
 
 ## 变更管理
 
-所有代码变更均应通过变更请求（`EdanSpec/feature/{timestamp}-{topic}/`）进行追踪与管理：
+所有代码变更均应通过变更请求（`MedSpec/feature/{timestamp}-{topic}/`）进行追踪与管理：
 
 - **一个变更 = 一个目录** — 聚合 proposal、specs、design、tasks 等交付物
 - **状态驱动** — 从文件系统恢复上下文，不依赖会话记忆
 - **tasks.md 是唯一进度来源** — checkbox 格式，驱动 implement 技能
 - **status.json 同步** — 每次创建/更新交付物后同步更新 `artifactGraph` 字段
-- **完成后归档** — 移至 `EdanSpec/archive/`
+- **完成后归档** — 移至 `MedSpec/archive/`
 
 详见 [AGENT.md](AGENT.md) 中的变更管理机制。

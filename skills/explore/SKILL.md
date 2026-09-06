@@ -1,5 +1,5 @@
 ---
-name: edanspec:explore
+name: meddev:explore
 author: yuanlichu
 description: 进入探索模式——用反问引导用户逐步明确需求，调查代码库、比较方案、发现风险。当用户表达模糊想法（"我在想"、"我在考虑"）、想先看看怎么做、需要调研分析、比较 A/B 方案、或说"先看看"、"调研一下"、"分析一下"、"你觉得哪个好"、"这个怎么做比较好"时，即使没有明确说"探索"或"调研"，也应主动使用此 skill。纯对话探索，不生成文件，完成后引导 create-spec。不适用于用户已给出明确实现指令（如"帮我实现 XX"、"在 XX 文件加 XX"）或修复具体 bug 的场景。
 ---
@@ -8,7 +8,7 @@ description: 进入探索模式——用反问引导用户逐步明确需求，�
 
 在动手之前帮助思考。调查代码库、比较方案、发现风险。
 
-**不生成任何文件，不编写应用代码。** 用户要求实现或生成文档时，引导使用 `edanspec:create-spec` 或 `edanspec:design-review`。
+**不生成任何文件，不编写应用代码。** 用户要求实现或生成文档时，引导使用 `meddev:create-spec` 或 `meddev:design-review`。
 
 ## 触发条件
 
@@ -133,21 +133,21 @@ C) OAuth2，改动最大，但后续扩展性好
 
 ### 第二步：调用 create-spec skill
 
-用户确认方向后，**必须通过 Skill 工具调用 `edanspec:create-spec`**，不能用自己的话术代替。
+用户确认方向后，**必须通过 Skill 工具调用 `meddev:create-spec`**，不能用自己的话术代替。
 
 **调用方式：**
 ```
-Skill("edanspec:create-spec", args="<探索摘要>")
+Skill("meddev:create-spec", args="<探索摘要>")
 ```
-将探索总结中的核心目标、选定方向、关键约束和风险以简洁文本作为 args 传入，`edanspec:create-spec`会据此创建需求文档。
+将探索总结中的核心目标、选定方向、关键约束和风险以简洁文本作为 args 传入，`meddev:create-spec`会据此创建需求文档。
 
 **错误做法：** 自己描述"我来帮你创建 feature..."然后用 Write/Edit 手动创建文件，或走 `/plan` 等其他路径。
 
 | 复杂度 | 引导话术 |
 |--------|---------|
-| 小改动（1-2 文件） | "确认没问题。要我执行 `edanspec:create-spec` 开始吗？" |
-| 中等功能（3-4 文件） | "确认没问题。要我执行 `edanspec:create-spec` 创建 feature 并生成方案文档吗？" |
-| 大功能/架构变更（5+ 文件） | "确认没问题。涉及架构变更，建议先执行 `edanspec:create-spec`，再走 `edanspec:design-review`。要我开始吗？" |
+| 小改动（1-2 文件） | "确认没问题。要我执行 `meddev:create-spec` 开始吗？" |
+| 中等功能（3-4 文件） | "确认没问题。要我执行 `meddev:create-spec` 创建 feature 并生成方案文档吗？" |
+| 大功能/架构变更（5+ 文件） | "确认没问题。涉及架构变更，建议先执行 `meddev:create-spec`，再走 `meddev:design-review`。要我开始吗？" |
 
 **用户说"先不急"时**：不强制引导，结束探索即可。
 

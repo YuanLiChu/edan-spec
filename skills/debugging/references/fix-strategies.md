@@ -1,6 +1,6 @@
 # 修复策略
 
-edanspec:debugging skill 的补充参考文档，详述各类错误的修复方法和反模式。
+meddev:debugging skill 的补充参考文档，详述各类错误的修复方法和反模式。
 
 > 测试编写模式（AAA、命名、断言、Mock）详见 `testing-patterns.md`。
 

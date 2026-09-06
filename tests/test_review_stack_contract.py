@@ -6,7 +6,7 @@ from pathlib import Path
 
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-REGISTRY = ROOT_DIR / "EdanSpec" / "review-stack.yaml"
+REGISTRY = ROOT_DIR / "MedSpec" / "review-stack.yaml"
 GENERIC_SKILL = ROOT_DIR / "skills" / "code-review" / "SKILL.md"
 GENERIC_REVIEWER = ROOT_DIR / "agents" / "code-reviewer.md"
 
@@ -46,8 +46,8 @@ class ReviewStackContractTests(unittest.TestCase):
         reviewer = GENERIC_REVIEWER.read_text(encoding="utf-8")
 
         for required in (
-            "EdanSpec/review-stack.yaml",
-            ".edan-dev/review-stack.yaml",
+            "MedSpec/review-stack.yaml",
+            ".meddev/review-stack.yaml",
             "allFiles",
             "matchedFiles",
             "guidance",
@@ -88,8 +88,8 @@ class ReviewStackContractTests(unittest.TestCase):
     def test_project_guidance_paths_are_explicit_and_local(self) -> None:
         registry = REGISTRY.read_text(encoding="utf-8")
         for relative in (
-            "EdanSpec/review-notes/qt-cpp.md",
-            "EdanSpec/review-notes/qt-qml.md",
+            "MedSpec/review-notes/qt-cpp.md",
+            "MedSpec/review-notes/qt-qml.md",
         ):
             self.assertIn(relative, registry)
             self.assertTrue((ROOT_DIR / relative).is_file())
@@ -97,10 +97,12 @@ class ReviewStackContractTests(unittest.TestCase):
     def test_qt_skills_are_invoked_from_generic_code_review(self) -> None:
         cpp = (ROOT_DIR / "skills" / "qt-cpp-review" / "SKILL.md").read_text(encoding="utf-8")
         qml = (ROOT_DIR / "skills" / "qt-qml-review" / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("edanspec:code-review", cpp)
-        self.assertIn("edanspec:code-review", qml)
-        self.assertNotIn("edanspec-code-review", cpp)
-        self.assertNotIn("edanspec-code-review", qml)
+        self.assertIn("meddev:code-review", cpp)
+        self.assertIn("meddev:code-review", qml)
+        self.assertNotIn("edanspec:", cpp)
+        self.assertNotIn("edanspec:", qml)
+        self.assertNotIn("EdanSpec", cpp)
+        self.assertNotIn("EdanSpec", qml)
 
 
 if __name__ == "__main__":

@@ -36,7 +36,7 @@ pending → ready → done
 |---|---|---|
 | `active` | feature 进行中 | create-spec 初始化 |
 | `completed` | 全部任务 + 审查关卡通过，待归档 | task-implement 步骤六完成后 |
-| `archived` | 已移入 `EdanSpec/archive/` | archive 移动文件后 |
+| `archived` | 已移入 `MedSpec/archive/` | archive 移动文件后 |
 | `abandoned` | 用户主动放弃 | 用户明确说放弃时 |
 
 ```

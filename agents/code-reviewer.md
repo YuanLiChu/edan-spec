@@ -16,7 +16,7 @@ tools: ["Read", "Glob", "Grep", "Bash"]
 - [必须] 每个发现分级：CRITICAL / IMPORTANT / SUGGESTION
 - [必须] 每个问题给出文件位置和修复建议
 - [必须] Chesterton's Fence：先理解为什么存在，再判断是否应该改
-- [必须] 如发现认证/授权/用户输入/密钥管理等安全问题，在报告中注明"建议调用 edanspec:security-review skill 进行全面安全审查"
+- [必须] 如发现认证/授权/用户输入/密钥管理等安全问题，在报告中注明"建议调用 meddev:security-review skill 进行全面安全审查"
 - [禁止] 不负责修复代码（审查完返回报告即可）
 - [禁止] 只关注格式/风格，忽略逻辑/架构问题
 

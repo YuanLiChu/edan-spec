@@ -50,7 +50,7 @@
 2. 每个增量验证：测试通过 + 构建成功 + clang-format/clang-tidy/clazy 通过
 3. 任务完成后必须运行覆盖率工具检测（不得推算），标准：行覆盖≥80%、分支≥70%、主要路径100%
 4. 完成后提交 commit，不要合并
-5. 遇到问题调 edanspec:debugging 排障
+5. 遇到问题调 meddev:debugging 排障
 ```
 
 ## 验证

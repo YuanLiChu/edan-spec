@@ -1,7 +1,7 @@
 version: 1
 
 # 项目级技术栈专项走读注册表。规则正文属于各自 skill，配置只负责路由。
-# 查找顺序：EdanSpec/review-stack.yaml → .edan-dev/review-stack.yaml
+# 查找顺序：MedSpec/review-stack.yaml → .meddev/review-stack.yaml
 stacks:
   - id: qt-cpp
     enabled: true
@@ -18,7 +18,7 @@ stacks:
         - '\bqt_add_executable\b'
         - '\bqt_add_qml_module\b'
     guidance:
-      - EdanSpec/review-notes/qt-cpp.md
+      - MedSpec/review-notes/qt-cpp.md
 
   - id: qt-qml
     enabled: true
@@ -26,4 +26,4 @@ stacks:
     match:
       extensions: [.qml, .qmltypes]
     guidance:
-      - EdanSpec/review-notes/qt-qml.md
+      - MedSpec/review-notes/qt-qml.md

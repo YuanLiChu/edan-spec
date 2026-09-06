@@ -1,5 +1,5 @@
 ---
-name: edanspec:create-spec
+name: meddev:create-spec
 author: yuanlichu
 description: 为需求创建或更新方案文档（proposal + spec + design）。**触发场景：** 新功能、"做一个XX"、"加个XX"、"继续上次"、"方案调整"、"需求变了"。**不适用：** 一行修复、拼写错误、纯调研。需求简单也建议用——先花 5 分钟确认范围和验收标准，比写完后发现理解偏差返工几小时划算。
 ---
@@ -12,7 +12,7 @@ description: 为需求创建或更新方案文档（proposal + spec + design）�
 
 启动时自动判断当前场景，不要求用户手动选择。
 
-1. 扫描 `EdanSpec/feature/` 下所有子目录，查找 `state: "active"` 的 feature
+1. 扫描 `MedSpec/feature/` 下所有子目录，查找 `state: "active"` 的 feature
 2. 根据匹配结果分流：
 
 | 检测结果 | 场景 | 下一步 |
@@ -27,7 +27,7 @@ description: 为需求创建或更新方案文档（proposal + spec + design）�
 ## 目录结构
 
 ```
-EdanSpec/feature/{timestamp}-{topic}/
+MedSpec/feature/{timestamp}-{topic}/
 ├── proposal.md            # 为什么做、影响范围
 ├── specs/                 # 需求规格（验收条件）
 │   └── {capability}-spec.md
@@ -82,9 +82,9 @@ EdanSpec/feature/{timestamp}-{topic}/
 ```bash
 TIMESTAMP=$(date +%Y%m%d%H%M%S)
 NAME="${TIMESTAMP}-${topic}"
-mkdir -p "EdanSpec/feature/${NAME}/specs"
-mkdir -p "EdanSpec/specs"
-mkdir -p "EdanSpec/archive"
+mkdir -p "MedSpec/feature/${NAME}/specs"
+mkdir -p "MedSpec/specs"
+mkdir -p "MedSpec/archive"
 ```
 
 初始化 `status.json`，包含 `name`、`created`、`base_commit`、`state: "active"`、`artifactGraph`（proposal / specs / design 三条记录，均 `pending`）、`designReviewState: "none"`、`reviewGate`（三个 review 均 `pending`）、`taskGraph: []`。字段详情见 [references/status-model.md](references/status-model.md)。
@@ -149,7 +149,7 @@ Spec 是验收条件（what），不是实现方案（how）。代码结构、�
 触发 design-review 引导的信号（任一满足）：3 个以上模块/文件变更、引入新的第三方依赖、架构层面变更 / 多系统集成 / 跨服务调用、安全/权限模型变更 / 数据库 schema 变更 / 性能有严格要求。
 
 引导话术：
-> "检测到架构层面变更，建议执行 `edanspec:design-review` 出详细方案后再拆分任务。也可以先跳过，直接拆分任务。要继续吗？"
+> "检测到架构层面变更，建议执行 `meddev:design-review` 出详细方案后再拆分任务。也可以先跳过，直接拆分任务。要继续吗？"
 
 - 继续 → 更新 `designReviewState: "recommended"`，引导调用 design-review
 - 跳过 → 更新 `designReviewState: "skipped"`，进入步骤 6
@@ -157,7 +157,7 @@ Spec 是验收条件（what），不是实现方案（how）。代码结构、�
 
 ### 步骤 6 — 下一步
 
-报告产物清单 → 提示调用 `edanspec:task-plan` 技能拆分任务。
+报告产物清单 → 提示调用 `meddev:task-plan` 技能拆分任务。
 
 ## 状态管理
 

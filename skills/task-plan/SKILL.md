@@ -1,5 +1,5 @@
 ---
-name: edanspec:task-plan
+name: meddev:task-plan
 author: yuanlichu
 description: 任务规划。将需求/设计分解为可执行的任务文档（验收标准、增量计划、工时估算、依赖关系）。触发场景：「任务规划」「任务拆分」「工作量估算」「排期」「这个需求怎么实现」「帮我把这个拆分一下」「从哪里开始」「项目太大不知道怎么下手」。当用户提到新功能开发、项目初始化、特性规划时使用。不适用于：范围明确的单文件更改、已有 bug 修复（如样式微调、空指针修复）、纯配置变更、文档更新。
 ---
@@ -16,8 +16,8 @@ description: 任务规划。将需求/设计分解为可执行的任务文档（
 
 | 优先级 | 文档 | 来源 |
 |--------|------|------|
-| 1（重量评审） | `review/solution.md` + `review/detail.md` | `edanspec:design-review` 产出 |
-| 2（轻量方案） | `proposal.md` + `design.md` + `specs/` | `edanspec:create-spec` 产出 |
+| 1（重量评审） | `review/solution.md` + `review/detail.md` | `meddev:design-review` 产出 |
+| 2（轻量方案） | `proposal.md` + `design.md` + `specs/` | `meddev:create-spec` 产出 |
 | 3（无方案） | 直接基于需求描述 | 无上游时 |
 
 选择最高可用优先级作为主要输入，但依赖的低优先级文档仍需读取。
@@ -95,7 +95,7 @@ description: 任务规划。将需求/设计分解为可执行的任务文档（
   - 对应验收标准：非法帧（校验和）
   - 完成判定：`ctest -R FrameValidator --output-on-failure` 通过 && `cmake --build build` 无错误
 
-**失败策略**：同一增量修复超过 2 次未成功 → STOP,调 edanspec:debugging 定位根因；超过 3 次 → STOP,调 edanspec:explore 重新审视方案；超过 4 次 → 停止并报告用户。
+**失败策略**：同一增量修复超过 2 次未成功 → STOP,调 meddev:debugging 定位根因；超过 3 次 → STOP,调 meddev:explore 重新审视方案；超过 4 次 → 停止并报告用户。
 ```
 
 ### 排序与检查点
@@ -128,7 +128,7 @@ description: 任务规划。将需求/设计分解为可执行的任务文档（
 
 ## 输出文件
 
-输出到 `EdanSpec/feature/<name>/tasks.md`。
+输出到 `MedSpec/feature/<name>/tasks.md`。
 
 **生成后更新 `status.json`**（如不存在则创建）：
 

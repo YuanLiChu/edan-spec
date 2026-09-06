@@ -1,5 +1,5 @@
 ---
-name: edanspec:security-review
+name: meddev:security-review
 author: yuanlichu
 description: 合入前安全审查——输入验证、认证/授权、数据保护、机密管理、依赖漏洞。触发场景：涉及用户输入、认证/授权、数据存储、外部集成、文件上传的代码变更，用户要求「安全检查」「审查安全性」「安全漏洞」「跨站脚本」「SQL 注入」。不适用于纯 UI 样式调整或文档变更。
 ---
