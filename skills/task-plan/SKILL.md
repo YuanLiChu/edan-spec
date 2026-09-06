@@ -1,5 +1,6 @@
 ---
 name: edanspec:task-plan
+author: yuanlichu
 description: 任务规划。将需求/设计分解为可执行的任务文档（验收标准、增量计划、工时估算、依赖关系）。触发场景：「任务规划」「任务拆分」「工作量估算」「排期」「这个需求怎么实现」「帮我把这个拆分一下」「从哪里开始」「项目太大不知道怎么下手」。当用户提到新功能开发、项目初始化、特性规划时使用。不适用于：范围明确的单文件更改、已有 bug 修复（如样式微调、空指针修复）、纯配置变更、文档更新。
 ---
 
@@ -29,15 +30,15 @@ description: 任务规划。将需求/设计分解为可执行的任务文档（
 
 **正确方式**（按功能垂直切分，每个任务独立可测试）：
 ```
-任务1：用户注册功能（schema + API + UI）
-任务2：用户登录功能（schema + API + UI）
+任务1：设备连接功能（端口抽象 + 状态机 + 连接 UI）
+任务2：波形显示功能（缓冲 + 模型 + 视图）
 ```
 
 **错误方式**（按技术层水平切分，任务之间强耦合）：
 ```
-任务1：所有数据库表
-任务2：所有 API
-任务3：所有 UI
+任务1：所有头文件与 CMake
+任务2：所有业务类
+任务3：所有窗口/QML
 ```
 
 **量化约束**：每个任务 ≤ 0.5 人天、涉及文件 ≤ 3 个、验收标准 ≤ 3 条。超限必须拆为两个任务。
@@ -46,7 +47,7 @@ description: 任务规划。将需求/设计分解为可执行的任务文档（
 
 每个任务内部按增量切分，增量数 = 验收标准数。按依赖顺序自底向上：
 ```
-数据库 schema → API 模型 → API 端点 → 前端组件 → UI
+领域模型/协议 → 端口与 Fake → 用例 → UI 绑定
 ```
 
 ### 工时估算
@@ -57,13 +58,13 @@ description: 任务规划。将需求/设计分解为可执行的任务文档（
 
 详细模板见 `templates/task-template.md`。按模板结构生成任务卡片，每个卡片包含：描述、关联需求、前置依赖、涉及文件、验收标准、增量计划、工时估算、失败策略。
 
-### 示例：邮箱验证器任务
+### 示例：帧校验器任务
 
 ```markdown
-### Task-002：邮箱密码格式验证器
+### Task-002：协议帧校验器
 
-**描述**：实现 EmailValidator 和 PasswordValidator，提供纯函数校验邮箱格式和密码强度，被登录/注册表单复用。
-**关联需求**：specs/auth.md §3.2 输入实时校验。→ Agent：读取 specs/auth.md 确认校验规则。
+**描述**：实现 FrameValidator，校验设备帧的长度、校验和与类型字段，被解析器与连接层复用。
+**关联需求**：specs/protocol.md §3.2 帧校验。→ Agent：读取 specs/protocol.md 确认规则。
 **前置依赖**：Task-001（项目骨架）。→ Agent：前置未完成时停下来先完成依赖。
 
 **工时估算**：0.3 人天
@@ -73,27 +74,26 @@ description: 任务规划。将需求/设计分解为可执行的任务文档（
 → Agent：缓冲计算规则见 `references/risk-classification.md`。
 
 **涉及文件**：
-- `core/validation/EmailValidator.kt` — 新增，邮箱正则校验
-- `core/validation/PasswordValidator.kt` — 新增，密码强度校验
-- `core/validation/EmailValidatorTest.kt` — 新增，单元测试
-- `core/validation/PasswordValidatorTest.kt` — 新增，单元测试
+- `src/domain/protocol/FrameValidator.h` — 新增，声明
+- `src/domain/protocol/FrameValidator.cpp` — 新增，长度与校验和
+- `tests/unit/protocol/FrameValidatorTest.cpp` — 新增，单元测试
 
 **验收标准**：
-- **邮箱格式校验**：当输入合法邮箱地址时返回 true，输入非法格式返回 false。验证方式：EmailValidatorTest 覆盖合法/非法/边界值。
-- **密码强度校验**：当密码少于8字符或不含大小写字母和数字时返回 false。验证方式：PasswordValidatorTest 覆盖合法/弱密码/边界值。
+- **合法帧**：当帧长度与校验和正确时返回 true。验证方式：FrameValidatorTest 覆盖最小帧/典型帧。
+- **非法帧**：当长度不足、超长或校验和错误时返回 false。验证方式：覆盖空缓冲、短帧、坏校验和。
 
 **增量计划**：
-- [ ] **增量 1**：EmailValidator
-  - 做什么：实现正则校验逻辑
-  - 交付：EmailValidator 类 + 单元测试
-  - 对应验收标准：邮箱格式校验
-  - 完成判定：`./gradlew test --tests "*EmailValidatorTest*"` 通过 && `./gradlew assembleDebug` 无错误
+- [ ] **增量 1**：长度校验
+  - 做什么：实现最小/最大长度
+  - 交付：FrameValidator + 测试
+  - 对应验收标准：合法帧 / 非法帧（长度）
+  - 完成判定：`ctest -R FrameValidator --output-on-failure` 通过 && `cmake --build build` 无错误
 
-- [ ] **增量 2**：PasswordValidator
-  - 做什么：实现强度校验逻辑
-  - 交付：PasswordValidator 类 + 单元测试
-  - 对应验收标准：密码强度校验
-  - 完成判定：`./gradlew test --tests "*PasswordValidatorTest*"` 通过 && `./gradlew assembleDebug` 无错误
+- [ ] **增量 2**：校验和
+  - 做什么：实现校验和
+  - 交付：校验和逻辑 + 测试
+  - 对应验收标准：非法帧（校验和）
+  - 完成判定：`ctest -R FrameValidator --output-on-failure` 通过 && `cmake --build build` 无错误
 
 **失败策略**：同一增量修复超过 2 次未成功 → STOP,调 edanspec:debugging 定位根因；超过 3 次 → STOP,调 edanspec:explore 重新审视方案；超过 4 次 → 停止并报告用户。
 ```
@@ -108,11 +108,11 @@ description: 任务规划。将需求/设计分解为可执行的任务文档（
 
 | 大小 | 文件数 | 人天 | 典型场景 | 建议 |
 |------|--------|------|----------|------|
-| XS | 1 | ≤0.25 | 单方法、简单UI、文档 | 无需拆分 |
-| S | 2 | 0.25-0.5 | 单组件、单API端点 | 无需拆分 |
+| XS | 1 | ≤0.25 | 单方法、简单控件、文档 | 无需拆分 |
+| S | 2 | 0.25-0.5 | 单控件、单协议命令 | 无需拆分 |
 | M | 3-4 | 0.5-1.5 | 功能切片、多方法 | 理想粒度 |
 | L | 5-7 | 1.5-3 | 多模块集成、复杂算法 | 尽量拆分 |
-| XL | 8+ | — | 全栈功能、大型重构 | **必须拆分** |
+| XL | 8+ | — | 跨 UI/领域/设备 的整条功能、大型重构 | **必须拆分** |
 
 **调整规则**：遇到使用新技术、依赖外部接口、高风险任务、团队不熟悉领域时，复杂度提升 1 级。
 

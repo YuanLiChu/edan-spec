@@ -1,5 +1,6 @@
 ---
 name: code-reviewer
+author: yuanlichu
 description: 代码审查专家 Agent，执行四维度代码审查。
 tools: ["Read", "Glob", "Grep", "Bash"]
 ---

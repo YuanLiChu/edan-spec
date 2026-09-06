@@ -1,5 +1,6 @@
 ---
 name: edanspec:create-spec
+author: yuanlichu
 description: 为需求创建或更新方案文档（proposal + spec + design）。**触发场景：** 新功能、"做一个XX"、"加个XX"、"继续上次"、"方案调整"、"需求变了"。**不适用：** 一行修复、拼写错误、纯调研。需求简单也建议用——先花 5 分钟确认范围和验收标准，比写完后发现理解偏差返工几小时划算。
 ---
 
@@ -139,7 +140,7 @@ Spec 是验收条件（what），不是实现方案（how）。代码结构、�
 
 生成前先读取 [references/design-guide.md](references/design-guide.md)。
 
-已有项目时沿用现有技术栈——自行更换框架会在团队中制造技术债和认知分裂，也让后续维护成本成倍增长。新项目参考 `references/platform-*.md` 逐项确认技术选型。
+已有项目时沿用现有技术栈——自行更换框架会在团队中制造技术债和认知分裂，也让后续维护成本成倍增长。新项目参考 `references/platform-qt.md` 或 `references/platform-embedded.md` 逐项确认技术选型。
 
 ### 步骤 5 — 完成判定
 

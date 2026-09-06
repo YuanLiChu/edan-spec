@@ -1,5 +1,6 @@
 ---
 name: edanspec:archive
+author: yuanlichu
 description: 归档已完成的 feature——引导验证（可选）、delta spec 合并、移动到归档目录。触发场景：feature 完成准备归档、用户说「归档这个」「看看能归档哪些」「归档」。不适用于未完成或有 CRITICAL 问题的 feature。
 ---
 
@@ -120,7 +121,7 @@ EdanSpec/specs/                          EdanSpec/feature/xxx/specs/
 | 多 feature 都实现了代码 | 按创建时间依次合并（先建优先，后建覆盖） |
 | 多 feature 都没实现代码 | 跳过合并，警告用户 |
 
-"是否实现代码"：比较 `base_commit` 与 HEAD 的 diff，含 `.kt/.java/.py/.go/.ts` 等源码文件修改视为已实现，仅 `.md/.json` 变更视为未实现。
+"是否实现代码"：比较 `base_commit` 与 HEAD 的 diff，含 `.cpp/.cc/.cxx/.h/.hpp/.qml/.ui/.qrc/.cmake` 等源码或构建文件修改视为已实现，仅 `.md/.json` 变更视为未实现。
 
 ## 4. 移动到归档目录
 

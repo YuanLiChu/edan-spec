@@ -24,19 +24,17 @@
 - [变更要点]
 
 [footer]
-
-Co-Authored-By: Claude
 ```
 
 **Type 类型**：`feat` | `fix` | `refactor` | `test` | `docs` | `chore` | `style` | `perf`
 
-**Scope（可选）**：变更影响的模块或功能，如 `user`、`auth`、`api`
+**Scope（可选）**：变更影响的模块或功能，如 `device`、`ui`、`protocol`
 
 **Breaking Change**：在 type 后加 `!`，如 `feat(api)!: 移除旧版认证接口`
 
 **Footer**：`BREAKING CHANGE: ...` / `Closes #123` / `Fixes #456`
 
-> `Co-Authored-By: Claude` 是 Git 标准的协作署名 metadata，AI 协作生成的提交必须包含此行。
+> 提交 **Author 必须为 yuanlichu**。不要添加其他 Co-Author，不要把模型名称写入提交消息。
 
 ## 分支管理
 
@@ -96,9 +94,10 @@ Co-Authored-By: Claude
 - 生命周期：创建 → 开发 → 验证 → 清理（3 个提交内）
 - 禁止：长寿命 flag、嵌套超 2 层、核心业务逻辑放在 flag 分支内
 
-## 数据库迁移
+## 数据迁移（SQLite / 本地库）
 
-- 命名格式：`<timestamp>_<描述>.sql`，如 `20260508_add_user_avatar.sql`
+- 命名格式：`<timestamp>_<描述>.sql`，如 `20260508_add_session_index.sql`
 - 每个 forward 脚本必须有对应的 `.down.sql` 反向脚本
 - 迁移脚本不可修改，只能新增
 - 禁止破坏性变更直接执行（删列、改类型），需分多步：新增 → 双写 → 迁移数据 → 删除旧字段
+- 桌面/设备应用在启动路径做版本化 migration，失败不得静默继续

@@ -126,7 +126,7 @@ graph TD
 
 | 类名 | 职责 | 依赖关系 | 文件路径 |
 |------|------|---------|---------|
-| **ClassName** | 职责 | 依赖 XxxService | `src/module/Class.kt` |
+| **ClassName** | 职责 | 依赖 XxxService | `src/module/Class.h` |
 
 ```mermaid
 classDiagram

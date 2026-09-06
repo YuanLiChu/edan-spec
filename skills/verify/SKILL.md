@@ -1,5 +1,6 @@
 ---
 name: edanspec:verify
+author: yuanlichu
 description: 三维度（完整性/正确性/一致性）+ 三级严重度报告。触发场景：feature 完成准备归档、用户要求「验证一下」「检查完成度」「看看还缺什么」。不适用于单行修复或小改动。
 ---
 

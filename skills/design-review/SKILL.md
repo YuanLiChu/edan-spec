@@ -1,5 +1,6 @@
 ---
 name: edanspec:design-review
+author: yuanlichu
 description: 复杂功能的正式评审流程——八章方案文档 + 八章详细设计。触发场景：用户明确说「出方案」「详细设计」「架构评审」「design review」。日常功能用 edanspec:create-spec 即可。前置条件：feature 下已有 proposal + spec + design 产物（由 create-spec 生成）。
 ---
 

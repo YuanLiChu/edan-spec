@@ -1,6 +1,8 @@
 # edan-spec
 
-一套结构化的 AI 辅助软件开发工作流规范，包含 Agent 行为准则、编码规范、技能（Skills）库和文档模板。
+一套面向 **C++ / Qt** 工程的结构化 AI 辅助软件开发工作流规范，包含 Agent 行为准则、编码规范、技能（Skills）库和文档模板。
+
+**作者：** yuanlichu
 
 ## 核心理念
 
@@ -22,12 +24,12 @@
 │   ├── anti-patterns.md         # 常见误区与反驳
 │   └── git-conventions.md       # Git 操作规范
 ├── rules/                       # 编码规范
-│   ├── common/                  # 通用编码风格（所有语言适用）
-│   ├── java/                    # Java 编码风格
-│   └── kotlin/                  # Kotlin 编码风格
+│   ├── common/                  # 通用编码风格
+│   ├── cpp/                     # C++ 编码风格
+│   └── qt/                      # Qt / QML 编码风格
 ├── skills/                      # 技能集合
 │   ├── explore/                 # 探索模式（需求澄清 + 方案比较）
-│   ├── create-spec/             # 创建 feature 目录 + 生成 proposal/spec/design
+│   ├── create-spec/             # 创建 feature 目录 + 生成 proposal/spec/design（含 Qt/嵌入式平台参考）
 │   ├── design-review/           # 复杂功能的正式评审（八章方案 + 八章详细设计）
 │   ├── task-plan/               # 任务规划（拆分为可执行任务清单）
 │   ├── task-implement/          # 任务实现（TDD 循环 + 原子提交）
@@ -125,8 +127,13 @@ flowchart LR
 按文件后缀自动加载对应规范，当前包含：
 
 - 通用规范：[rules/common/coding-style.md](rules/common/coding-style.md)
-- Java 规范：[rules/java/coding-style.md](rules/java/coding-style.md)
-- Kotlin 规范：[rules/kotlin/coding-style.md](rules/kotlin/coding-style.md)
+- C++ 规范：[rules/cpp/coding-style.md](rules/cpp/coding-style.md)
+- Qt 规范：[rules/qt/coding-style.md](rules/qt/coding-style.md)
+
+平台技术参考（create-spec / design-review）：
+
+- Qt 桌面：[skills/create-spec/references/platform-qt.md](skills/create-spec/references/platform-qt.md)
+- Qt 嵌入式：[skills/create-spec/references/platform-embedded.md](skills/create-spec/references/platform-embedded.md)
 
 ## 测试覆盖率基线
 

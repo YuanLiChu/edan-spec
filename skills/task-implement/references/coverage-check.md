@@ -11,20 +11,20 @@
 | 主要路径 | 100% |
 | 检测方式 | 必须执行项目覆盖率工具，以输出结果为准 |
 
-标准基线见 `AGENT.md`「质量标准」章节。
+标准基线见 `AGENT.md`「测试与质量」章节。
 
 ## 检测流程
 
-1. 运行项目覆盖率命令（根据项目类型）：
+1. 运行项目覆盖率命令（根据工具链）：
 
    | 项目类型 | 覆盖率命令 |
    |----------|-----------|
-   | Gradle (Kotlin/Java) | `./gradlew test jacocoTestReport` 或项目已有覆盖率命令 |
-   | Maven | `mvn test jacoco:report` |
-   | Node.js | `npm test -- --coverage` |
-   | Python | `pytest --cov=src --cov-report=term-missing` |
-   | Go | `go test -coverprofile=coverage.out && go tool cover -func=coverage.out` |
+   | CMake + GCC | `cmake -DENABLE_COVERAGE=ON` 构建后 `ctest`，再用 `gcovr --fail-under-line 80` 或 `lcov` + 阈值脚本 |
+   | CMake + Clang | `LLVM_PROFILE_FILE` + `llvm-cov report`，对行/分支做阈值断言 |
+   | CMake + MSVC | OpenCppCoverage 导出 cobertura/HTML，脚本解析行覆盖率 |
    | 其他 | 检测环境时确定（见 `environment-detection.md`），后续统一使用 |
+
+   阈值必须由命令失败码表达（例如 `gcovr --fail-under-line 80 --fail-under-branch 70`）。只生成 HTML 不算通过。
 
 2. 读取覆盖率工具输出结果，逐项对比基线
 3. 任一项不达标 → 补充测试（正常路径 + 边界 + 异常），重新运行直到达标
@@ -43,6 +43,7 @@
 - "大概够了"、"应该达标了"等主观判断
 - 跳过覆盖率检查直接提交
 - 凑数字写无意义测试（应覆盖正常路径 + 边界条件 + 异常场景）
+- 为刷覆盖率 `#ifdef` 掉分支或把 `Q_UNREACHABLE` 当覆盖
 
 ## 验证
 

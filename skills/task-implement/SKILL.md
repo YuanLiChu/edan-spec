@@ -1,5 +1,6 @@
 ---
 name: edanspec:task-implement
+author: yuanlichu
 description: 依据任务文档执行代码实现。增量式开发 + 测试驱动（TDD），每个增量独立验证后原子提交。触发场景：用户要求开始实现功能或修复 bug、按任务计划执行、继续上次工作。不适用于纯配置变更、文档更新、简单重命名。
 ---
 
@@ -35,7 +36,7 @@ description: 依据任务文档执行代码实现。增量式开发 + 测试驱�
       "title": "用户登录功能",
       "status": "done",
       "dependsOn": [],
-      "files": ["src/auth/login.ts", "tests/auth/login.spec.ts"],
+      "files": ["src/auth/LoginController.cpp", "tests/unit/auth/LoginControllerTest.cpp"],
       "currentIncrement": 3,
       "totalIncrements": 3,
       "lastModified": "2026-05-12T10:00:00"
@@ -45,7 +46,7 @@ description: 依据任务文档执行代码实现。增量式开发 + 测试驱�
       "title": "用户注册功能",
       "status": "in_progress",
       "dependsOn": ["Task-001"],
-      "files": ["src/auth/register.ts", "tests/auth/register.spec.ts"],
+      "files": ["src/auth/RegisterController.cpp", "tests/unit/auth/RegisterControllerTest.cpp"],
       "currentIncrement": 1,
       "totalIncrements": 3,
       "lastModified": "2026-05-12T10:30:00"
@@ -164,9 +165,9 @@ pending ──(依赖全done)──→ ready ──(开始执行)──→ in_pr
 编码前用一两行说明思路，让用户有机会纠偏：
 ```
 Plan:
-1. 编写 createTask 的失败测试
+1. 编写 FrameValidator 的失败测试
 2. 实现最小版本让测试通过
-3. 重构：提取 id 生成逻辑
+3. 重构：提取校验和计算
 → 开始执行，除非你另有指示。
 ```
 
@@ -186,11 +187,10 @@ RED（失败测试）→ GREEN（最小实现）→ REFACTOR（重构）→ 验�
 
 每个增量提交前必须通过以下验证，全部必须通过：
 
-1. **测试通过** — 该增量涉及的测试文件全部通过
-2. **构建成功** — 项目可编译
-3. **Lint 通过** — 代码风格无违规
-4. **类型检查通过** — 无类型错误
-5. **覆盖率达标** — 运行覆盖率工具检测，新增/修改文件达到基线要求（详见 `references/coverage-check.md`）
+1. **测试通过** — 该增量涉及的测试全部通过（`ctest` / GTest / QTest）
+2. **构建成功** — `cmake --build` 可编译
+3. **格式与静态分析通过** — clang-format；C++ 用 clang-tidy，Qt 代码加 clazy
+4. **覆盖率达标** — 运行覆盖率工具检测，新增/修改文件达到基线要求（详见 `references/coverage-check.md`）
 
 > 覆盖率不得推算，必须实际运行覆盖率工具检测。
 
@@ -198,8 +198,8 @@ RED（失败测试）→ GREEN（最小实现）→ REFACTOR（重构）→ 验�
 
 | 类型 | 执行方式 |
 |------|---------|
-| 自动化验证（上述 5 项） | Agent 自动执行命令 |
-| 手动验证（模拟器操作、UI 视觉检查、完整流程走查） | **跳过，不执行**。Agent 仅执行自动化验证 |
+| 自动化验证（上述 4 项） | Agent 自动执行命令 |
+| 手动验证（真机操作、UI 视觉检查、完整流程走查） | **跳过，不执行**。Agent 仅执行自动化验证 |
 
 **规则**：
 - 自动化验证不通过 → 调 `edanspec:debugging` 排障，不得跳过
@@ -226,8 +226,6 @@ feat: 实现任务创建功能
 
 - 新增 createTask 函数
 - 完成 Task-001 增量 1, 2
-
-Co-Authored-By: Claude
 ```
 
 - `git add` 指定文件（禁止 `-A`）
@@ -258,7 +256,7 @@ Co-Authored-By: Claude
 每个增量的完整流程是一个循环：
 
 ```
-执行 TDD → 验证（5 项） → 原子提交 → 更新状态 → 下一个增量
+执行 TDD → 验证（测试 / 构建 / 静态分析 / 覆盖率） → 原子提交 → 更新状态 → 下一个增量
 ```
 
 循环终止条件：tasks.md 中所有任务的增量 checkbox 均为 `[x]` → 进入步骤六（审查关卡）。

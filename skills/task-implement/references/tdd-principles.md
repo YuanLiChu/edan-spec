@@ -10,33 +10,37 @@ RED（编写失败测试）→ GREEN（最小实现）→ REFACTOR（重构优�
 
 测试必须先编写且先失败，否则无法证明实现正确。
 
-```typescript
-// TypeScript - 验证用户登录逻辑
-it('authenticates user with valid email and password', async () => {
-  const user = await authService.login({
-    email: 'test@example.com',
-    password: 'SecurePass123!',
-  });
-  expect(user.id).toBe('usr_001');
-  expect(user.token).toBeDefined();
-});
+```cpp
+TEST(AuthService, should_authenticate_when_login_given_validPassword)
+{
+    FakeUserStore store;
+    store.add(User{"usr_001", QStringLiteral("tester"), hashPassword("SecurePass123!")});
+    AuthService auth(&store);
+
+    const auto user = auth.login(QStringLiteral("tester"), QStringLiteral("SecurePass123!"));
+
+    ASSERT_TRUE(user.has_value());
+    EXPECT_EQ(user->id, QStringLiteral("usr_001"));
+}
 ```
 
-```python
-# Python - 验证密码哈希
-def test_password_is_hashed():
-    hashed = hash_password('SecurePass123!')
-    assert hashed != 'SecurePass123!'
-    assert verify_password('SecurePass123!', hashed)
+```cpp
+TEST(PasswordHasher, should_notStorePlaintext_when_hash_given_secret)
+{
+    const QByteArray hashed = hashPassword(QByteArrayLiteral("SecurePass123!"));
+    EXPECT_NE(hashed, QByteArrayLiteral("SecurePass123!"));
+    EXPECT_TRUE(verifyPassword(QByteArrayLiteral("SecurePass123!"), hashed));
+}
 ```
 
 ### GREEN — 最小实现
 
 编写刚好满足测试通过的代码，不做过度设计。
 
-```typescript
-export async function createTask(input: { title: string }) {
-  return { id: generateId(), title: input.title, status: 'pending' };
+```cpp
+Task createTask(const QString& title)
+{
+    return Task{generateId(), title, TaskStatus::Pending};
 }
 ```
 
@@ -52,17 +56,18 @@ export async function createTask(input: { title: string }) {
 编写复现测试 → 确认失败 → 实现修复 → 确认通过 → 全量回归
 ```
 
-```typescript
-// Bug：完成任务时 completedAt 字段未更新
+```cpp
+// Bug：完成任务时 completedAt 未更新
 
-// 1. 复现测试（应失败）
-it('sets completedAt when task is completed', async () => {
-  const task = await taskService.createTask({ title: 'Update docs' });
-  const done = await taskService.completeTask(task.id);
-  expect(done.completedAt).toBeInstanceOf(Date);  // 失败 → Bug 确认
-});
+TEST(TaskService, should_setCompletedAt_when_complete_given_existingTask)
+{
+    TaskService service;
+    const Task created = service.create(QStringLiteral("Update docs"));
+    const Task done = service.complete(created.id);
+    EXPECT_TRUE(done.completedAt.has_value());
+}
 
-// 2. 修复 → 测试通过 → Bug 修复完成，回归测试提供保护
+// 失败 → 确认 Bug → 修复实现 → 测试通过
 ```
 
 ---
@@ -70,8 +75,8 @@ it('sets completedAt when task is completed', async () => {
 ## 测试金字塔
 
 ```
-        ╱╲       E2E 测试（~5%）— 关键用户流程
-       ╱──╲      集成测试（~15%）— API 边界、组件交互
+        ╱╲       E2E / 板上冒烟（~5%）— 关键用户或设备流程
+       ╱──╲      集成测试（~15%）— 协议、SQLite、Qt 事件循环
       ╱────╲     单元测试（~80%）— 纯逻辑、毫秒级
      ╱──────╲
 ```
@@ -80,16 +85,16 @@ it('sets completedAt when task is completed', async () => {
 
 | 规模 | 约束 | 示例 |
 |------|------|------|
-| 小规模 | 单进程、无 I/O、无网络 | 纯函数、数据转换、算法逻辑 |
-| 中规模 | 仅 localhost、无外部服务 | API 测试 + 测试数据库、组件 |
-| 大规模 | 允许外部服务 | E2E、性能基准、第三方集成 |
+| 小规模 | 单进程、无 I/O、无真实设备 | 纯函数、解析、状态机 |
+| 中规模 | 仅 localhost、Fake 端口、offscreen | QTest 信号、SQLite 临时库 |
+| 大规模 | 允许真实设备或显示 | HIL、安装包冒烟 |
 
 ### 决策路径
 
 ```
-纯逻辑、无副作用？            → 单元测试（小规模）
-跨越系统边界（API/DB/文件）？  → 集成测试（中规模）
-关键用户流程？                 → E2E 测试（大规模）— 仅限关键路径
+纯逻辑、无副作用？            → 单元测试（GTest）
+跨越 Qt 事件/SQL/文件？       → 集成测试（QTest / 临时目录）
+关键用户或设备流程？           → 冒烟 — 仅限关键路径
 ```
 
 ---
@@ -98,42 +103,42 @@ it('sets completedAt when task is completed', async () => {
 
 **验证行为结果，不验证内部调用**：断言最终状态，不验证中间过程。
 
-```typescript
-// 推荐：验证查询结果
-expect(tasks[0].createdAt).toBeGreaterThan(tasks[1].createdAt);
+```cpp
+// 推荐：验证排序结果
+EXPECT_GT(tasks[0].createdAt, tasks[1].createdAt);
 
-// 不推荐：验证内部调用
-expect(db.query).toHaveBeenCalledWith(expect.stringContaining('ORDER BY'));
+// 不推荐：验证 SQL 字符串
+EXPECT_CALL(db, exec(testing::HasSubstr("ORDER BY")));
 ```
 
 **DAMP 优于 DRY**：测试代码中可读性优先于复用，每个测试用例自包含。
 
-```python
-# Python - 每个测试独立可读，不依赖共享 fixture
-def test_rejects_empty_username():
-    with pytest.raises(ValueError, match="username is required"):
-        create_user(username="", email="a@b.com")
+```cpp
+TEST(UserFactory, should_reject_when_create_given_emptyName)
+{
+    EXPECT_THROW(createUser(QString(), QStringLiteral("a@b.com")), std::invalid_argument);
+}
 
-def test_rejects_invalid_email():
-    with pytest.raises(ValueError, match="invalid email"):
-        create_user(username="test", email="not-an-email")
+TEST(UserFactory, should_reject_when_create_given_invalidEmail)
+{
+    EXPECT_THROW(createUser(QStringLiteral("test"), QStringLiteral("not-an-email")),
+                 std::invalid_argument);
+}
 ```
 
 **Arrange-Act-Assert 三段式**：准备测试数据 → 执行被测操作 → 断言预期结果。
 
-```go
-// Go - 三段式结构
-func TestCalculateDiscount(t *testing.T) {
+```cpp
+TEST(Pricing, should_applyGoldDiscount_when_calculate_given_goldTier)
+{
     // Arrange
-    order := Order{Amount: 100, Tier: "gold"}
+    const Order order{100, MembershipLevel::Gold};
 
     // Act
-    result := CalculateDiscount(order)
+    const int result = calculateDiscount(order);
 
     // Assert
-    if result != 15 {
-        t.Errorf("expected 15%% discount for gold tier, got %d", result)
-    }
+    EXPECT_EQ(result, 15);
 }
 ```
 
@@ -142,10 +147,10 @@ func TestCalculateDiscount(t *testing.T) {
 **描述性命名**：测试名称应清晰描述被测行为和预期结果。
 
 ```
-推荐：'returns 401 when auth token is expired'
-推荐：'rejects order with negative quantity'
-不推荐：'test auth'
-不推荐：'handles errors'
+推荐：should_returnUnauthorized_when_login_given_expiredToken
+推荐：should_reject_when_enqueue_given_negativeQuantity
+不推荐：test_auth
+不推荐：handles_errors
 ```
 
 ---
@@ -155,12 +160,12 @@ func TestCalculateDiscount(t *testing.T) {
 ```
 优先级（高 → 低）：
 1. 真实实现 → 最高置信度
-2. Fake     → 内存版依赖替代
+2. Fake     → 内存版端口（FakeDevicePort）
 3. Stub     → 返回固定数据
 4. Mock     → 验证方法调用，慎用
 ```
 
-**仅在以下情况使用 Mock**：真实依赖执行过慢、结果具有不确定性、或存在不可控副作用（外部 API 调用、邮件发送、支付网关等）。
+**仅在以下情况使用 Mock**：真实依赖执行过慢、结果具有不确定性、或存在不可控副作用（真设备、真网络、支付）。
 
 ---
 
@@ -168,12 +173,11 @@ func TestCalculateDiscount(t *testing.T) {
 
 | 反模式 | 后果 | 修正 |
 |--------|------|------|
-| 测试内部实现细节 | 重构导致测试失败，即使行为正确 | 仅验证输入输出 |
-| 非确定性测试 | 间歇性失败，失去信任 | 使用确定性断言，隔离测试状态 |
-| 测试第三方代码 | 浪费资源验证不受控的行为 | 只测试自己的业务逻辑 |
-| 快照滥用 | 大型快照无人审查，任何改动都触发失败 | 谨慎使用，变更必须审查 |
-| 测试用例不隔离 | 单独通过、合并失败 | 每个测试独立搭建和清理环境 |
-| 过度 Mock | 测试通过、生产环境崩溃 | 优先使用真实实现 |
+| 测试实现细节 | 重构导致测试失败，即使行为正确 | 仅验证输入输出 |
+| 非确定性测试 | 间歇性失败，失去信任 | Fake 时钟，禁止固定 sleep |
+| 测试第三方代码 | 浪费资源验证 Qt/STL | 只测试自己的逻辑 |
+| 测试用例不隔离 | 单独通过、合并失败 | 每个测试独立搭建和清理 |
+| 过度 Mock | 测试通过、生产环境崩溃 | 优先 Fake |
 
 ---
 
@@ -183,4 +187,4 @@ func TestCalculateDiscount(t *testing.T) {
 - 测试首次运行即通过（可能覆盖不足）
 - Bug 修复缺少复现测试
 - 测试名称无法表达验证意图
-- 为维持测试全绿而跳过失败用例
+- 为维持测试全绿而 `QSKIP` / `DISABLED_`

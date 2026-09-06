@@ -1,141 +1,98 @@
 # 安全速查清单
 
-应用安全的速查清单。与 `edanspec:security-review` skill 配合使用。
+C++ / Qt 应用安全速查。与 `edanspec:security-review` skill 配合使用。
 
 ## 目录
 
 - [提交前检查](#提交前检查)
-- [认证](#认证)
-- [授权](#授权)
+- [认证与本地服务](#认证与本地服务)
 - [输入验证](#输入验证)
-- [安全响应头](#安全响应头)
-- [CORS 配置](#cors-配置)
+- [TLS 与网络](#tls-与网络)
 - [数据保护](#数据保护)
 - [依赖安全](#依赖安全)
 - [错误处理](#错误处理)
-- [OWASP Top 10 速查](#owasp-top-10-速查)
+- [OWASP 映射（桌面/设备）](#owasp-映射桌面设备)
 
 ---
 
 ## 提交前检查
 
-- [ ] 代码中无密钥（`git diff --cached | grep -i "password\|secret\|api_key\|token"`）
-- [ ] `.gitignore` 包含：`.env`、`.env.local`、`*.pem`、`*.key`
-- [ ] `.env.example` 使用占位值（非真实密钥）
+- [ ] 代码中无密钥（`git diff --cached` 搜索 `password`、`secret`、`api_key`、`BEGIN PRIVATE`）
+- [ ] `.gitignore` 包含：`.env`、`*.pem`、`*.key`、`*.pfx`、本地 Qt 套件路径
+- [ ] 示例配置只有占位符
 
-## 认证
+## 认证与本地服务
 
-- [ ] 密码使用 bcrypt（≥12 轮）、scrypt 或 argon2 哈希
-- [ ] Session Cookie 设置：`httpOnly`、`secure`、`sameSite: 'lax'`
-- [ ] Session 设置了合理的过期时间（max-age）
-- [ ] 登录端点有速率限制（≤10 次/15 分钟）
-- [ ] 密码重置 Token 有时效（≤1 小时）且一次性使用
-- [ ] 连续失败后账户锁定（可选，带通知）
-- [ ] 敏感操作支持 MFA（推荐但非强制）
-
-## 授权
-
-- [ ] 每个受保护端点检查认证
-- [ ] 每个资源访问检查所有权/角色（防止 IDOR）
-- [ ] 管理端点需要管理员角色
-- [ ] API Key 限制为最小必要权限
-- [ ] JWT Token 验证（签名、过期时间、签发者）
+- [ ] 口令使用 Argon2/bcrypt/scrypt，禁止自写 MD5/SHA1 当口令哈希
+- [ ] 本地 HTTP/socket 有鉴权或仅 Unix socket + 文件权限
+- [ ] 管理接口独立权限
+- [ ] 登录/调试口有失败节流
+- [ ] 发布构建关闭未文档化的调试后门
 
 ## 输入验证
 
-- [ ] 所有外部输入在系统边界验证（API 路由、表单处理）
-- [ ] 使用白名单验证（而非黑名单）
-- [ ] 字符串长度受限（最小/最大值）
-- [ ] 数值范围已验证
-- [ ] Email、URL、日期格式使用正确库验证
-- [ ] 文件上传：类型受限、大小受限、内容已验证
-- [ ] SQL 查询参数化（禁止字符串拼接）
-- [ ] HTML 输出编码（使用框架自动转义）
-- [ ] URL 在重定向前验证（防止开放重定向）
+- [ ] 所有外部输入在边界验证（设备帧、文件、QML 文本、CLI）
+- [ ] 白名单长度与字符集
+- [ ] 文件上传/导入：类型、大小、内容
+- [ ] SQL 绑定参数
+- [ ] `QProcess` 用 program + arguments，不经过 shell
+- [ ] 路径 `QFileInfo::canonicalFilePath` 限制在允许根目录下
+- [ ] 协议解析检查剩余长度，拒绝超大 `size` 字段
 
-## 安全响应头
+## TLS 与网络
 
-```
-Content-Security-Policy: default-src 'self'; script-src 'self'
-Strict-Transport-Security: max-age=31536000; includeSubDomains
-X-Content-Type-Options: nosniff
-X-Frame-Options: DENY
-X-XSS-Protection: 0  （禁用，依赖 CSP）
-Referrer-Policy: strict-origin-when-cross-origin
-Permissions-Policy: camera=(), microphone=(), geolocation=()
-```
+- [ ] HTTPS/TLS 启用，校验证书链与主机名
+- [ ] 禁止无条件 `ignoreSslErrors`
+- [ ] 证书钉扎若采用，须有轮换策略
+- [ ] 出站 URL 白名单（防 SSRF 打到内网调试口）
 
-## CORS 配置
-
-```kotlin
-// 推荐：限制性配置
-corsConfiguration.apply {
-    allowedOrigins = listOf("https://yourdomain.com")
-    allowedMethods = listOf("GET", "POST", "PUT", "PATCH", "DELETE")
-    allowedHeaders = listOf("Content-Type", "Authorization")
-    allowCredentials = true
-}
-
-// 生产环境禁止：
-corsConfiguration.apply {
-    allowedOrigins = listOf("*")  // 允许任何来源
-}
+```cpp
+// 禁止生产环境
+QObject::connect(reply, &QNetworkReply::sslErrors,
+                 reply, [reply](const QList<QSslError>&) { reply->ignoreSslErrors(); });
 ```
 
 ## 数据保护
 
-- [ ] API 响应排除了敏感字段（`passwordHash`、`resetToken` 等）
-- [ ] 日志中不记录敏感数据（密码、Token、完整卡号）
-- [ ] PII 数据在需要时加密存储
-- [ ] 所有外部通信使用 HTTPS
-- [ ] 数据库备份已加密
+- [ ] 日志不写口令、令牌、完整标识、原始临床/客户数据
+- [ ] DTO/JSON 不含 `passwordHash`
+- [ ] `QSettings` 不存明文秘密
+- [ ] 崩溃转储在发布配置中剥离敏感缓冲
 
 ## 依赖安全
 
 ```bash
-# Gradle（依赖漏洞扫描）
-./gradlew dependencies --configuration compileClasspath
-# 使用 OWASP Dependency-Check 插件
-./gradlew dependencyCheckAnalyze
+# 锁文件必须入库
+ls vcpkg.json conan.lock CMakeLists.txt
 
-# Node.js
-npm audit
-npm audit fix
-npm audit --audit-level=critical
-
-# Python
-pip-audit
-safety check
+# 核对 Qt / OpenSSL 版本是否在已知漏洞范围外（查阅当前 CVE，勿沿用过期记忆）
 ```
+
+- [ ] 第三方与 Qt 补丁版本可追溯
+- [ ] 不拷贝老旧 `md5.cpp` 进树
 
 ## 错误处理
 
-```kotlin
-// 生产环境：通用错误，不暴露内部细节
-fun handleException(ex: Exception): ErrorResponse {
-    log.error("Unexpected error", ex)
-    return ErrorResponse("INTERNAL_ERROR", "Something went wrong")
-}
+```cpp
+// 生产：通用错误给 UI，细节只进分类日志
+qCCritical(lcApp) << ex.what();
+return ErrorResponse{ErrorCode::Internal, QStringLiteral("Operation failed")};
 
-// 生产环境禁止：
-ErrorResponse(
-    error = ex.message,        // 暴露内部细节
-    stack = ex.stackTrace,     // 暴露调用栈
-    query = ex.sql             // 暴露数据库细节
-)
+// 禁止
+return ErrorResponse{ex.what(), stackTrace, lastSql};
 ```
 
-## OWASP Top 10 速查
+## OWASP 映射（桌面/设备）
 
 | # | 漏洞 | 预防 |
 |---|------|------|
-| 1 | 访问控制失效 | 每个端点检查认证，验证所有权 |
-| 2 | 密码学失效 | HTTPS、强哈希、代码中无密钥 |
-| 3 | 注入 | 参数化查询、输入验证 |
-| 4 | 不安全设计 | 威胁建模、规范驱动开发 |
-| 5 | 安全配置错误 | 安全响应头、最小权限、依赖审计 |
-| 6 | 脆弱组件 | 依赖扫描、保持更新、最小依赖 |
-| 7 | 认证失效 | 强密码、速率限制、Session 管理 |
-| 8 | 数据完整性失效 | 验证更新/依赖、签名产物 |
-| 9 | 日志与监控失效 | 记录安全事件、不记录密钥 |
-| 10 | SSRF | 验证/白名单 URL、限制出站请求 |
+| 1 | 访问控制失效 | 本地服务鉴权、文件权限、角色 |
+| 2 | 密码学失效 | TLS 校验、系统凭据库、禁止自写加密 |
+| 3 | 注入 | SQL 绑定、QProcess 参数列表、格式化字符串 |
+| 4 | 不安全设计 | 威胁建模、协议长度上限 |
+| 5 | 安全配置错误 | 关闭调试口、最小 Qt 插件集 |
+| 6 | 脆弱组件 | 锁定依赖、跟踪 Qt/OpenSSL 公告 |
+| 7 | 认证失效 | KDF、节流、会话过期 |
+| 8 | 数据完整性失效 | OTA 验签、更新包哈希 |
+| 9 | 日志与监控失效 | 安全事件要记，秘密不记 |
+| 10 | SSRF | URL 白名单 |
